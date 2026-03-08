@@ -1,3 +1,5 @@
+link:https://dev-centr.github.io/issue-tracker/[image:https://img.shields.io/badge/docs-GitHub%20Pages-2ea043?style=flat[Documentation]]
+
 = Issue Tracker
 
 Local GitHub issues and comments browser. Syncs issues into SQLite so you can browse and search offline like a local copy of the GitHub issues tracker.
