@@ -1,0 +1,12 @@
+{
+  "name": "issue-tracker-docs",
+  "private": true,
+  "scripts": {
+    "build": "antora antora-playbook.yml --to-dir public",
+    "build:local": "antora antora-playbook-local.yml --to-dir build/site"
+  },
+  "devDependencies": {
+    "@antora/cli": "^3.1.2",
+    "@antora/site-generator": "^3.1.2"
+  }
+}

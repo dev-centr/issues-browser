@@ -1,0 +1,26 @@
+= Installation
+
+== Prerequisites
+
+* **Git** and **gh** (GitHub CLI), authenticated (`gh auth login`).
+* **D compiler** (dmd or ldc) and **dub** for building from source.
+* **SQLite**: The project uses the d2sqlite3 D binding. On Windows, the default configuration may expect `sqlite3.lib` on your library path. You can:
+** Install SQLite (e.g. from https://sqlite.org/download.html) and add the lib path to your environment, or
+** Use the `all-included` subConfiguration for d2sqlite3 (see Build).
+
+== Build from source
+
+  git clone https://github.com/dev-centr/issue-tracker.git
+  cd issue-tracker
+  dub build --config=cli
+  dub build --config=application   # GUI (requires dlangui)
+
+To use bundled SQLite (avoids system sqlite3.lib on Windows):
+
+  dub build --config=cli --override-config=d2sqlite3/all-included
+
+The CLI binary is produced in the project directory or in `bin/` depending on your dub setup.
+
+== Installer (Windows)
+
+An installer can be built from the `installer/` directory. See the installer README for NSIS or Inno Setup steps. Prebuilt installers may be attached to GitHub releases.

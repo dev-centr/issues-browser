@@ -1,0 +1,34 @@
+# D / Dub
+dub.selections.json
+__dummy.html
+docs/.doctrees
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+bin/
+lib/
+.build/
+.dub/
+
+# Antora
+antora-playbook-local.yml
+build/
+public/
+node_modules/
+
+# IDE
+.idea/
+*.code-workspace
+.vscode/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Installer output
+installer/*.exe
+installer/*.msi
+installer/output/

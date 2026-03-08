@@ -1,0 +1,6 @@
+name: issue-tracker
+title: Issue Tracker
+version: master
+start_page: ROOT:index.adoc
+nav:
+  - modules/ROOT/nav.adoc

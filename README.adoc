@@ -1,0 +1,48 @@
+= Issue Tracker
+
+Local GitHub issues and comments browser. Syncs issues into SQLite so you can browse and search offline like a local copy of the GitHub issues tracker.
+
+== Features
+
+* **Recursive git discovery**: Add a folder; the app finds all repos (any directory containing `.git`).
+* **Per-repo SQLite**: Each repo's issues and comments are stored in `.issues/<reponame>.sqlite` next to the repo (sibling directory).
+* **GUI (DlangUI)**: Browse repos, list issues, view body and comment thread, search, trigger sync.
+* **CLI**: Same sync and query from the command line.
+* **Library**: Use the core sync and database API from other D code.
+* **Background sync**: Run sync from the GUI (or schedule via CLI/cron).
+
+== Requirements
+
+* **gh** CLI (GitHub) authenticated for API access.
+* **SQLite**: On Windows, you may need a `sqlite3.lib` in your library path or use a D2sqlite3 configuration that bundles SQLite (see link:docs/modules/ROOT/pages/installation.adoc[Installation]).
+
+== Quick start
+
+. Add a folder that contains git repos (e.g. your `Z:\code\github.com\dev-centr`).
+. Sync: the app uses `gh api` to fetch issues and comments and writes them to `.issues/<reponame>.sqlite`.
+. Browse and search in the GUI or via CLI.
+
+CLI examples:
+
+  issue-tracker --add-folder Z:\code\github.com\dev-centr
+  issue-tracker --sync Z:\code\github.com\dev-centr\issue-tracker
+  issue-tracker --list Z:\code\github.com\dev-centr\issue-tracker
+  issue-tracker --list Z:\code\github.com\dev-centr\issue-tracker --search "antora"
+
+== Build
+
+  dub build --config=cli
+  dub build --config=application   # GUI (requires dlangui)
+  dub build --config=library       # library only
+
+== Documentation
+
+Full docs are built with Antora and published to https://dev-centr.github.io/issue-tracker/:
+
+  pnpm install
+  pnpm run build        # production playbook
+  pnpm run build:local  # local playbook (sibling repos)
+
+== License
+
+MIT

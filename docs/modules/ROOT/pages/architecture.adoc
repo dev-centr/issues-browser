@@ -1,0 +1,31 @@
+= Architecture
+
+== Components
+
+* **issuetracker (library)**: Core types, git discovery, SQLite schema, and GitHub sync.
+* **application (GUI)**: DlangUI app; repo list, issue list, detail view, sync trigger.
+* **cli**: Command-line interface using the same library for sync, list, and search.
+
+== Git discovery
+
+Recursive walk of the given folder: any directory that contains a `.git` (file or directory) is treated as a repo. Remote URL and owner/name are read from `.git/config` (e.g. `https://github.com/owner/repo.git` or `git@github.com:owner/repo.git`).
+
+== Database schema
+
+* `repos`: path, remote, owner, name, updated_at.
+* `issues`: repo_id, number, title, state, body, url, created_at, closed_at, author, pr_accepted, state_reason.
+* `comments`: issue_id, body, author, created_at.
+* `sync_meta`: repo_id, last_sync.
+
+One SQLite file per repo: `.issues/<reponame>.sqlite` next to the repo folder.
+
+== Sync process
+
+Sync uses the `gh` CLI:
+
+. `gh api repos/owner/repo/issues --paginate --state all` for issue list.
+. For each issue: `gh api repos/owner/repo/issues/<num>/timeline` to determine pr_accepted and state_reason.
+. `gh api repos/owner/repo/issues/<num>/comments` for the comment thread.
+. Data is written to the repo's SQLite file via the database module.
+
+Background sync in the GUI runs the same sync logic when the user clicks *Sync selected*; a future version may add a timer or worker thread.

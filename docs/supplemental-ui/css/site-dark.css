@@ -1,0 +1,3 @@
+/* Dark theme overrides (antora-dark-theme style) */
+body.doc { background-color: var(--body-background); color: var(--body-font-color); }
+.nav-container { background-color: var(--nav-background); }

@@ -1,0 +1,46 @@
+{
+	"name": "issue-tracker",
+	"description": "Local GitHub issues and comments browser. Syncs issues into SQLite, browse and search with GUI or CLI.",
+	"authors": ["Dev-Centr"],
+	"license": "MIT",
+	"copyright": "Copyright © 2025, Dev-Centr",
+	"homepage": "https://github.com/dev-centr/issue-tracker",
+	"documentationURL": "https://dev-centr.github.io/issue-tracker/",
+	"dependencies": {
+		"d2sqlite3": "~>1.0.0",
+		"stdx-allocator": "~>3.0.2"
+	},
+	"subConfigurations": {
+		"d2sqlite3": "all-included"
+	},
+	"configurations": [
+		{
+			"name": "application",
+			"targetType": "executable",
+			"mainSourceFile": "source/app_gui.d",
+			"dependencies": {
+				"dlangui": "~>0.10.8"
+			},
+			"subConfigurations": {
+				"dlangui": "minimal"
+			},
+			"versions": ["EmbedStandardResources"],
+			"libs-windows": ["ole32"]
+		},
+		{
+			"name": "cli",
+			"targetType": "executable",
+			"mainSourceFile": "source/app_cli.d",
+			"subConfigurations": {
+				"d2sqlite3": "all-included"
+			}
+		},
+		{
+			"name": "library",
+			"targetType": "library",
+			"excludedSourceFiles": ["source/app_gui.d", "source/app_cli.d"]
+		}
+	],
+	"sourcePaths": ["source"],
+	"importPaths": ["source"]
+}

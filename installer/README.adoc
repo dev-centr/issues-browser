@@ -1,0 +1,17 @@
+= Installer
+
+Windows installer can be built with NSIS or Inno Setup.
+
+== NSIS (optional)
+
+. Install NSIS and ensure `makensis` is on PATH.
+. From repo root after building: `dub build --config=cli --build=release`
+. Run the NSIS script (when added) to produce `issue-tracker-setup.exe`.
+
+== Inno Setup (optional)
+
+. Install Inno Setup.
+. Create a `.iss` script that installs the CLI executable and optionally the GUI executable to a chosen directory and adds it to PATH.
+. Compile to produce `issue-tracker-setup.exe`.
+
+Output directory for installers can be `installer/output/` (gitignored).

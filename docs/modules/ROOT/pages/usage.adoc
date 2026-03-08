@@ -1,0 +1,37 @@
+= Usage
+
+== GUI
+
+. Start the application (`dub run --config=application` or the installed executable).
+. Enter a path to a folder that contains git repos (e.g. `Z:\code\github.com\dev-centr`) in the text field.
+. Click *Add folder* to discover repos; they appear in the left list.
+. Select a repo and click *Sync selected* to fetch issues and comments into `.issues/<reponame>.sqlite`.
+. Click an issue in the middle list to view its body and comment thread in the detail pane.
+. Use *Refresh list* after adding a folder or syncing.
+
+== CLI
+
+*Discover repos:*
+
+  issue-tracker --add-folder /path/to/parent/folder
+
+*Sync one repo (path to repo) or all repos in a folder:*
+
+  issue-tracker --sync /path/to/repo
+  issue-tracker --sync /path/to/folder/containing/repos
+
+*List issues (path to repo or path containing `.issues/<reponame>.sqlite`):*
+
+  issue-tracker --list /path/to/repo
+
+*Search issues (title/body):*
+
+  issue-tracker --list /path/to/repo --search "antora"
+
+*Help:*
+
+  issue-tracker --help
+
+== Where data is stored
+
+For a repo at `parent/reponame`, the SQLite file is at `parent/.issues/reponame.sqlite`. No sharding is used; one file per repo.
