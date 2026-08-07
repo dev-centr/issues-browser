@@ -25,6 +25,17 @@ jobs:
         run: pnpm install
       - name: Build site
         run: pnpm run build
+      - name: Add Pages root redirect
+        run: |
+          printf '%s\n' \
+            '<!DOCTYPE html>' \
+            '<meta charset="utf-8">' \
+            '<meta http-equiv="refresh" content="0; url=issue-tracker/">' \
+            '<link rel="canonical" href="issue-tracker/">' \
+            '<title>Issue Tracker</title>' \
+            "<script>location.replace('issue-tracker/')</script>" \
+            '<p><a href="issue-tracker/">Issue Tracker documentation</a></p>' \
+            > public/index.html
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
