@@ -3,7 +3,28 @@ ifndef::env-github[:icons: font]
 :toclevels: 2
 :sectanchors:
 
-[[readme-top]]
+ifdef::env-github[]
+++++
+<a id="readme-top"></a>
+<div align="center">
+<a href="https://github.com/dev-centr/issue-tracker/graphs/contributors"><img src="https://img.shields.io/github/contributors/dev-centr/issue-tracker.svg?style=for-the-badge" alt="Contributors"></a>
+<a href="https://github.com/dev-centr/issue-tracker/network/members"><img src="https://img.shields.io/github/forks/dev-centr/issue-tracker.svg?style=for-the-badge" alt="Forks"></a>
+<a href="https://github.com/dev-centr/issue-tracker/stargazers"><img src="https://img.shields.io/github/stars/dev-centr/issue-tracker.svg?style=for-the-badge" alt="Stargazers"></a>
+<a href="https://github.com/dev-centr/issue-tracker/issues"><img src="https://img.shields.io/github/issues/dev-centr/issue-tracker.svg?style=for-the-badge" alt="Issues"></a>
+<br />
+<h3 align="center">Issue Tracker</h3>
+<p align="center">
+Local GitHub issues and comments browser. Syncs issues into SQLite; browse and search with GUI or CLI.<br />
+<a href="https://docs.devcentr.org/issue-tracker/"><strong>Explore the docs »</strong></a><br /><br />
+<a href="https://github.com/dev-centr/issue-tracker/issues">Report Bug</a>
+&middot;
+<a href="https://github.com/dev-centr/issue-tracker/issues">Request Feature</a>
+</p>
+</div>
+++++
+endif::[]
+
+ifndef::env-github[]
 image:https://img.shields.io/github/contributors/dev-centr/issue-tracker.svg?style=for-the-badge[Contributors,link=https://github.com/dev-centr/issue-tracker/graphs/contributors]
 image:https://img.shields.io/github/forks/dev-centr/issue-tracker.svg?style=for-the-badge[Forks,link=https://github.com/dev-centr/issue-tracker/network/members]
 image:https://img.shields.io/github/stars/dev-centr/issue-tracker.svg?style=for-the-badge[Stars,link=https://github.com/dev-centr/issue-tracker/stargazers]
@@ -16,6 +37,7 @@ Local GitHub issues and comments browser. Syncs issues into SQLite; browse and s
 link:https://docs.devcentr.org/issue-tracker/[Explore the docs] ·
 link:https://github.com/dev-centr/issue-tracker/issues[Report Bug] ·
 link:https://github.com/dev-centr/issue-tracker/issues[Request Feature]
+endif::[]
 
 == About The Project
 
@@ -28,7 +50,11 @@ Local GitHub issues and comments browser. Syncs issues into SQLite so you can br
 * **Library**: Use the core sync and database API from other D code.
 * **Background sync**: Run sync from the GUI (or schedule via CLI/cron).
 
-link:#readme-top[back to top]
+ifdef::env-github[]
+++++
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+++++
+endif::[]
 
 == Installation
 
@@ -46,7 +72,11 @@ dub build --config=application   # GUI (requires dlangui)
 dub build --config=library       # library only
 ----
 
-link:#readme-top[back to top]
+ifdef::env-github[]
+++++
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+++++
+endif::[]
 
 == Usage
 
@@ -78,19 +108,32 @@ pnpm run build        # local/CI validation only
 pnpm run build:local  # local playbook (sibling repos)
 ----
 
-link:#readme-top[back to top]
+ifdef::env-github[]
+++++
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+++++
+endif::[]
 
 == License
 
 MIT
 
-link:#readme-top[back to top]
+ifdef::env-github[]
+++++
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+++++
+endif::[]
 
 == Contact
 
 DevCentr.org — support@devcentr.org
 
 * Project: https://github.com/dev-centr/issue-tracker
+* Docs: https://docs.devcentr.org/issue-tracker/
 * Site: https://devcentr.org
 
-link:#readme-top[back to top]
+ifdef::env-github[]
+++++
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+++++
+endif::[]
