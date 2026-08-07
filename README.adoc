@@ -13,7 +13,7 @@ image:https://img.shields.io/github/issues/dev-centr/issue-tracker.svg?style=for
 
 Local GitHub issues and comments browser. Syncs issues into SQLite; browse and search with GUI or CLI.
 
-link:https://dev-centr.github.io/issue-tracker/[Explore the docs] ·
+link:https://docs.devcentr.org/issue-tracker/[Explore the docs] ·
 link:https://github.com/dev-centr/issue-tracker/issues[Report Bug] ·
 link:https://github.com/dev-centr/issue-tracker/issues[Request Feature]
 
@@ -68,12 +68,13 @@ issue-tracker --list Z:\code\github.com\dev-centr\issue-tracker --search "antora
 
 === Documentation
 
-Full docs are built with Antora and published to https://dev-centr.github.io/issue-tracker/:
+Full docs are built with Antora and published on the Dev-Centr docs hub: https://docs.devcentr.org/issue-tracker/
+(Do not publish a secondary Antora site from this repo.)
 
 [source,bash]
 ----
 pnpm install
-pnpm run build        # production playbook
+pnpm run build        # local/CI validation only
 pnpm run build:local  # local playbook (sibling repos)
 ----
 

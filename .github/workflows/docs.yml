@@ -1,12 +1,28 @@
+# Validate Antora component build only.
+# Do NOT publish a secondary Antora site — Dev-Centr docs live at https://docs.devcentr.org
+# (wired via https://github.com/dev-centr/docs antora-playbook.yml).
+
 name: Documentation
 
 on:
   push:
     branches: [main]
+    paths:
+      - 'docs/**'
+      - 'antora-playbook.yml'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'antora-playbook.yml'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build-docs:
@@ -23,21 +39,5 @@ jobs:
         run: npm install -g pnpm
       - name: Install dependencies
         run: pnpm install
-      - name: Build site
+      - name: Build site (validation only)
         run: pnpm run build
-      - name: Add Pages root redirect
-        run: |
-          printf '%s\n' \
-            '<!DOCTYPE html>' \
-            '<meta charset="utf-8">' \
-            '<meta http-equiv="refresh" content="0; url=issue-tracker/">' \
-            '<link rel="canonical" href="issue-tracker/">' \
-            '<title>Issue Tracker</title>' \
-            "<script>location.replace('issue-tracker/')</script>" \
-            '<p><a href="issue-tracker/">Issue Tracker documentation</a></p>' \
-            > public/index.html
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public
