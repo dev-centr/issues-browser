@@ -54,5 +54,5 @@ Shared schema also lands in `dlang-supplemental/repo-get` (`getForge`).
 
 * `AMDphreak/ver` — no CI/releases; multi-VCS UX mostly stubs — not a dependency
 * `dev-centr/rules-manager` — IPC pattern reused; Electron tray not adopted; no published releases
-* `tim-dlang/dqt` — no `QSystemTrayIcon` yet; Win32 shim used for tray
+* `tim-dlang/dqt` — `QSystemTrayIcon` binding proposed upstream; temporary fork `dlang-supplemental/dqt` for git dependencies (prefer git over Dub registry for interim forks). Tray still uses Win32 until the binding lands.
 * `repo-get` — Linux release artifacts only; forge profiles added for metadata tooling
