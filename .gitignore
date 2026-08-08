@@ -6,12 +6,22 @@ docs/.doctrees
 *.obj
 *.exe
 *.dll
+*.pdb
+*.lib
 *.so
 *.dylib
+!vendor/sqlite/win64/sqlite3.dll
+!vendor/sqlite/win64/sqlite3.lib
 bin/
 lib/
 .build/
 .dub/
+/sqlite3.dll
+/sqlite3.lib
+/issues-browser
+/issues-browser.exe
+/issues-browser-gui
+/issues-browser-gui.exe
 
 # Antora
 antora-playbook-local.yml

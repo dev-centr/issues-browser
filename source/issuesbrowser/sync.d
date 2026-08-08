@@ -8,6 +8,7 @@ import std.string;
 import std.algorithm;
 import std.path;
 import std.array;
+import d2sqlite3;
 import issuesbrowser.types;
 import issuesbrowser.database;
 import issuesbrowser.gitdiscover;

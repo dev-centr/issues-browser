@@ -16,14 +16,14 @@ dub build --config=application   # GUI (requires dlangui)
 dub build --config=library       # library only
 ----
 
-To use bundled SQLite (avoids system sqlite3.lib on Windows):
+On Windows, this repo vendors `vendor/sqlite/win64/sqlite3.lib` (+ DLL) and wires `/LIBPATH` in `dub.json` for the CLI/GUI configs. `sqlite3.dll` is copied beside the executable on build.
 
 [source,bash]
 ----
-dub build --config=cli --override-config=d2sqlite3/all-included
+dub build --config=cli
 ----
 
-The executable target name is `issues-browser`.
+CLI target name: `issues-browser`. GUI target name: `issues-browser-gui`.
 
 == Notes
 

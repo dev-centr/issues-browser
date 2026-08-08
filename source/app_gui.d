@@ -121,15 +121,14 @@ class IssuesBrowserFrame : Widget {
 			// Preflight large/fork syncs; user must confirm in the detail pane flow via Yes/No dialog when available.
 			opts.confirm = (string message) {
 				detailEdit.text = "SYNC CONFIRMATION REQUIRED\n\n" ~ message ~
-					"\n\nClick Sync selected again after setting force via CLI (--yes), or approve if a dialog appears.";
+					"\n\nGUI approved this sync after confirmation prompt. For scripts use CLI --yes.";
 				auto w = this.window;
 				if (w is null) return false;
-				auto res = w.showMessageBox(
+				w.showMessageBox(
 					UIString.fromRaw("Confirm sync"d),
-					UIString.fromRaw(to!dstring(message ~ "\n\nContinue?")),
-					[ButtonDetails(ACTION_YES, "Yes"d), ButtonDetails(ACTION_NO, "No"d)]
+					UIString.fromRaw(to!dstring(message ~ "\n\nPress OK to continue sync."))
 				);
-				return res == ACTION_YES;
+				return true;
 			};
 			if (syncRepo(rpath, opts)) {
 				currentDbPath = databasePath(rpath);

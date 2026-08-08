@@ -26,7 +26,13 @@
 				"dlangui": "minimal"
 			},
 			"versions": ["EmbedStandardResources"],
-			"libs-windows": ["ole32"]
+			"libs-windows": ["ole32"],
+			"lflags-windows-x86_64": [
+				"/LIBPATH:$PACKAGE_DIR/vendor/sqlite/win64"
+			],
+			"copyFiles-windows-x86_64": [
+				"vendor/sqlite/win64/sqlite3.dll"
+			]
 		},
 		{
 			"name": "cli",
@@ -35,7 +41,13 @@
 			"mainSourceFile": "source/app_cli.d",
 			"subConfigurations": {
 				"d2sqlite3": "all-included"
-			}
+			},
+			"lflags-windows-x86_64": [
+				"/LIBPATH:$PACKAGE_DIR/vendor/sqlite/win64"
+			],
+			"copyFiles-windows-x86_64": [
+				"vendor/sqlite/win64/sqlite3.dll"
+			]
 		},
 		{
 			"name": "library",

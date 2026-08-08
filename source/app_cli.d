@@ -73,7 +73,7 @@ void main(string[] args) {
 		opts.force = yes;
 		opts.includeDiscussions = !noDiscussions;
 		opts.includePrs = includePrs;
-		opts.confirm = &cliConfirm;
+		opts.confirm = (string msg) { return cliConfirm(msg); };
 
 		if (exists(syncPath) && isDir(syncPath)) {
 			auto repos = discoverRepos(syncPath);
