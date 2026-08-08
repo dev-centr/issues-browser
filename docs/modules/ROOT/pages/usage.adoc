@@ -2,12 +2,12 @@
 
 == GUI
 
-. Start the application (`dub run --config=application` or the installed `issues-browser` executable).
-. Enter a path to a folder that contains git repos (e.g. your code root) in the text field.
-. Click *Add folder* to discover repos; they appear in the left list (● marks an existing local archive).
-. Select a repo and click *Sync selected* to fetch issues and discussions into `<repo>/.issues/database.sqlite`.
-. For large repos or busy forks, check *Allow large sync* first (see Guardrails).
+. Start the application (`dub run --config=application` or the installed `issues-browser-gui` executable).
+. Enter a path to a folder that contains git repos.
+. Click *Add folder* to discover repos.
+. Select a repo and click *Sync selected*. Large or forked repos ask for confirmation first.
 . Click an issue or discussion in the middle list to view body and comments.
+. Use *Refresh list* after adding a folder or syncing.
 
 == CLI
 
@@ -15,15 +15,15 @@
 
   issues-browser --add-folder /path/to/parent/folder
 
-*Find existing archives:*
+*Find existing archives (`**/.issues/database.sqlite`):*
 
-  issues-browser --find-db /path/to/parent/folder
+  issues-browser --find-dbs /path/to/code/root
 
-*Sync one repo or all repos under a folder:*
+*Sync one repo or all repos in a folder:*
 
   issues-browser --sync /path/to/repo
   issues-browser --sync /path/to/folder/containing/repos
-  issues-browser --sync /path/to/repo --yes
+  issues-browser --sync /path/to/busy-fork --yes
   issues-browser --sync /path/to/repo --no-discussions
   issues-browser --sync /path/to/repo --include-prs
 
@@ -32,23 +32,24 @@
   issues-browser --list /path/to/repo
   issues-browser --list /path/to/repo --search "antora"
 
+*Help:*
+
+  issues-browser --help
+
 == Where data is stored
 
-For a repo at `parent/reponame`, the SQLite file is at:
+For a repo at `parent/reponame`, the SQLite file is at `parent/reponame/.issues/database.sqlite`.
 
-  parent/reponame/.issues/database.sqlite
+On first sync the app appends a commented `.issues/` entry to that repo's `.gitignore` when missing.
 
-Sync also appends a commented `.issues/` entry to that repo's `.gitignore` if missing.
+Legacy path `parent/.issues/<reponame>.sqlite` is migrated automatically when present.
 
-Legacy layout (`parent/.issues/<reponame>.sqlite` from the old issue-tracker) is no longer used; re-sync to create the new path.
+== Sync guardrails
 
-== Guardrails
+Before downloading bodies, sync queries issue/discussion counts (and fork status).
 
-Before downloading, sync runs a GraphQL preflight for issue count, discussion count, and fork status.
+* Soft warning around **500** issues+discussions.
+* Strong confirmation around **2000** issues+discussions.
+* Forks at/above the soft threshold always require approval.
 
-* **Warn** when total items ≥ 500, or when the repo is a fork.
-* **Require confirmation** when total items ≥ 2000, or when a **fork** has ≥ 500 issues.
-* CLI: pass `--yes` / `-y` to approve.
-* GUI: check *Allow large sync*.
-
-This avoids accidentally mirroring tens of thousands of issues from a high-activity upstream via a local fork.
+Pass `--yes` (CLI) to approve non-interactively. GUI uses a Yes/No dialog.

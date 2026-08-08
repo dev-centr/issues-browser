@@ -14,7 +14,7 @@ ifdef::env-github[]
 <br />
 <h3 align="center">Issues Browser</h3>
 <p align="center">
-Local forge issues &amp; discussions browser. Syncs into per-repo SQLite for offline archive/browse.<br />
+Local forge issues and discussions browser. Archives threads into per-repo SQLite for offline browse and search.<br />
 <a href="https://docs.devcentr.org/issues-browser/"><strong>Explore the docs »</strong></a><br /><br />
 <a href="https://github.com/dev-centr/issues-browser/issues">Report Bug</a>
 &middot;
@@ -32,7 +32,7 @@ image:https://img.shields.io/github/issues/dev-centr/issues-browser.svg?style=fo
 
 = Issues Browser
 
-Local forge issues and discussions browser. Syncs into per-repo SQLite for offline archive/browse.
+Local forge issues and discussions browser. Archives threads into per-repo SQLite for offline browse and search.
 
 link:https://docs.devcentr.org/issues-browser/[Explore the docs] ·
 link:https://github.com/dev-centr/issues-browser/issues[Report Bug] ·
@@ -41,16 +41,15 @@ endif::[]
 
 == About The Project
 
-Offline archive/browser for forge **issues and discussions** (renamed from _issue-tracker_).
-Data lives at `<repo>/.issues/database.sqlite`; sync ensures `.issues/` is gitignored.
-Large repos and busy forks require explicit approval before syncing.
+Issues Browser is an *offline archive and browser* for forge issues and discussions (not a place to file new tickets). Sync pulls remote threads into SQLite so you keep a local copy if the host or upstream repo disappears.
 
-* **Recursive git discovery** and `**/.issues/database.sqlite` archive discovery
-* **Per-repo SQLite** inside the repo (not a shared username `.issues` tree)
-* **Discussions** synced by default; PRs excluded unless `--include-prs`
-* **GUI + CLI + library**
+* **Recursive git discovery**: Add a folder; the app finds repos (directories containing `.git`).
+* **Per-repo archive**: `<repo>/.issues/database.sqlite` inside the repo (gitignored automatically).
+* **Issues + discussions**: GitHub Discussions sync on by default; PRs excluded unless requested.
+* **Sync guardrails**: Preflight counts; warn/confirm on large repos and busy forks.
+* **GUI (DlangUI)** and **CLI** over the same library API.
 
-Bodies stay in SQLite; guardrails address sync volume, not DB body size.
+This is separate from the personal **issue-submissions** catalogue (`AMDphreak/.issue-submissions`), which stores draft/submitted issue markdown and screenshots for AI-assisted `gh` workflows.
 
 ifdef::env-github[]
 ++++
@@ -62,33 +61,72 @@ endif::[]
 
 === Requirements
 
-* **gh** CLI authenticated for API access.
-* **SQLite**: see link:docs/modules/ROOT/pages/installation.adoc[Installation].
+* **gh** CLI authenticated for GitHub API / GraphQL access.
+* **SQLite**: On Windows, use the bundled d2sqlite3 `all-included` config (default here) or provide `sqlite3.lib`.
 
 === Build
 
 [source,bash]
 ----
 dub build --config=cli
-dub build --config=application
+dub build --config=application   # GUI (requires dlangui)
+dub build --config=library
 ----
+
+ifdef::env-github[]
+++++
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+++++
+endif::[]
 
 == Usage
 
+=== Quick start
+
+. Add a folder that contains git repos (e.g. your `code/github.com/dev-centr`).
+. Sync: fetches issues and discussions into `<repo>/.issues/database.sqlite` (adds `.issues/` to that repo's `.gitignore`).
+. Browse and search in the GUI or via CLI.
+
+CLI examples:
+
 [source,bash]
 ----
-issues-browser --add-folder /path/to/code
-issues-browser --sync /path/to/repo
-issues-browser --sync /path/to/busy-fork --yes
-issues-browser --list /path/to/repo --search "antora"
-issues-browser --find-db /path/to/code
+issues-browser --add-folder Z:\code\github.com\dev-centr
+issues-browser --find-dbs Z:\code\github.com\dev-centr
+issues-browser --sync Z:\code\github.com\dev-centr\issues-browser
+issues-browser --sync Z:\code\github.com\.clones\npm\cli --yes
+issues-browser --list Z:\code\github.com\dev-centr\issues-browser --search "antora"
 ----
 
+Large repos and forks prompt for confirmation unless you pass `--yes`.
+
+=== Documentation
+
 Full docs: https://docs.devcentr.org/issues-browser/
+(Do not publish a secondary Antora site from this repo.)
+
+[source,bash]
+----
+pnpm install
+pnpm run build        # local/CI validation only
+pnpm run build:local  # local playbook (sibling repos)
+----
+
+ifdef::env-github[]
+++++
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+++++
+endif::[]
 
 == License
 
 MIT
+
+ifdef::env-github[]
+++++
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+++++
+endif::[]
 
 == Contact
 
@@ -96,3 +134,10 @@ DevCentr.org — support@devcentr.org
 
 * Project: https://github.com/dev-centr/issues-browser
 * Docs: https://docs.devcentr.org/issues-browser/
+* Site: https://devcentr.org
+
+ifdef::env-github[]
+++++
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+++++
+endif::[]
