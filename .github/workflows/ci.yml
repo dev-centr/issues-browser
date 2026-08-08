@@ -7,25 +7,28 @@ on:
     branches: [main]
 
 jobs:
-  build-cli:
-    name: Build CLI
+  build:
+    name: Build ${{ matrix.config }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        config: [cli, library, daemon]
     steps:
       - uses: actions/checkout@v4
       - name: Install D
         uses: dlang-community/setup-dlang@v1
         with:
           compiler: dmd-latest
-      - name: Build CLI
-        run: dub build --config=cli
-  build-library:
-    name: Build library
-    runs-on: ubuntu-latest
+      - name: Build
+        run: dub build --config=${{ matrix.config }}
+  build-tray-windows:
+    name: Build tray (Windows)
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install D
         uses: dlang-community/setup-dlang@v1
         with:
           compiler: dmd-latest
-      - name: Build library
-        run: dub build --config=library
+      - name: Build tray
+        run: dub build --config=tray

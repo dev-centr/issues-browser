@@ -12,6 +12,7 @@ docs/.doctrees
 *.dylib
 !vendor/sqlite/win64/sqlite3.dll
 !vendor/sqlite/win64/sqlite3.lib
+vendor/prohelp/
 bin/
 lib/
 .build/

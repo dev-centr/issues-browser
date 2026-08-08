@@ -1,27 +1,28 @@
 = Issues Browser
 
-Issues Browser is a local forge *issues and discussions* browser. It archives issue threads and GitHub Discussions into a SQLite database at `<repo>/.issues/database.sqlite`, so you can browse and search offline — useful when a remote repo or provider is unavailable.
+Issues Browser is a local **forge metadata backup** and offline browser for issues, pull requests, and discussions. It syncs correspondence into SQLite under a central `.issues/archives` tree so you can search offline and keep history if a remote disappears.
 
-It is an archive/browser, not a ticket tracker for filing new work. Personal draft/submit workflows live in a separate submissions catalogue (e.g. `AMDphreak/.issue-submissions`).
+It is not a ticket tracker for filing new work. Personal draft/submit workflows live under `AMDphreak/.issues/submissions/`.
 
 == Features
 
-* Recursive git discovery: add a folder and the app finds git repos (any directory containing `.git`).
-* Per-repo SQLite: `<repo>/.issues/database.sqlite` inside the repo; `.issues/` is added to that repo's `.gitignore`.
-* Recursive archive discovery: find existing DBs via `**/.issues/database.sqlite` (does not treat a username-level `.issue-submissions` tree as an archive).
-* Issues + discussions (discussions on by default); pull requests excluded unless `--include-prs`.
-* Sync guardrails: GraphQL preflight counts; confirm before large or busy-fork syncs.
-* GUI (DlangUI) and CLI over the same library.
+* Central archives: `archives/<host>/<owner>/<repo>/database.sqlite`
+* Issues + **PRs by default** + discussions
+* Sync guardrails for large/forked repos
+* CLI with https://github.com/openshellorg/prohelp[ProHelp] progressive help (`?`)
+* `issuesd` daemon + system tray for monitored repos
+* SDLang forge profiles (GitHub implemented; GitLab stub)
 
 == Requirements
 
-* **gh** CLI (GitHub) installed and authenticated.
-* SQLite: see xref:installation.adoc[Installation] for platform notes.
+* **gh** CLI authenticated (GitHub)
+* SQLite via bundled d2sqlite3 (see xref:installation.adoc[Installation])
 
 == Quick start
 
-. Run the GUI or CLI and add a folder that contains git repos.
-. Sync: the app fetches issues and discussions into `<repo>/.issues/database.sqlite`.
-. Browse and search in the GUI or with the CLI.
+. Sync: `issues-browser --sync <repo-path> --yes`
+. List: `issues-browser --list owner/name`
+. Monitor: `issues-browser --monitor-add owner/name` then run `issuesd`
+. Browse with the GUI or CLI search
 
-See xref:usage.adoc[Usage] for CLI examples and GUI workflow.
+See xref:backup.adoc[Forge metadata backup] and xref:usage.adoc[Usage].

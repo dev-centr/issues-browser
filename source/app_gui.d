@@ -10,6 +10,7 @@ import issuesbrowser.gitdiscover;
 import issuesbrowser.sync;
 import issuesbrowser.database;
 import issuesbrowser.types;
+import issuesbrowser.paths;
 import d2sqlite3;
 
 mixin APP_ENTRY_POINT;
@@ -53,85 +54,85 @@ class IssuesBrowserFrame : Widget {
 		VerticalLayout mainLayout = new VerticalLayout();
 		mainLayout.addChild(topBar);
 		mainLayout.addChild(content, 1);
-
 		addChild(mainLayout);
 
-		string[] repoNames;
-		string[] repoPaths;
+		RepoInfo[] repos;
 		string currentDbPath;
-		long[] issueIds;
-		bool[] isDiscussion; // parallel to issueIds
+		long[] itemIds;
+		string[] itemKinds; // "issue" | "pr" | "discussion"
 
 		void refreshRepos() {
 			repoList.items.clear();
-			repoNames = [];
-			repoPaths = [];
+			repos = [];
 			string path = folderEdit.text.to!string.strip();
 			if (path.length == 0) return;
-			auto repos = discoverRepos(path);
+			repos = discoverRepos(path);
 			foreach (r; repos) {
 				string label = r.name;
 				if (r.owner.length > 0) label = r.owner ~ "/" ~ label;
 				repoList.items ~= label;
-				repoNames ~= r.name;
-				repoPaths ~= r.path;
 			}
 			repoList.updateItems();
 		}
 
 		void refreshIssues() {
 			issueList.items.clear();
-			issueIds = [];
-			isDiscussion = [];
+			itemIds = [];
+			itemKinds = [];
 			if (currentDbPath.length == 0 || !exists(currentDbPath)) return;
 			Database db = Database(currentDbPath);
-			foreach (row; db.execute("SELECT id, number, title, state FROM issues ORDER BY number DESC")) {
-				issueIds ~= row.peek!long(0);
-				isDiscussion ~= false;
-				issueList.items ~= ("#" ~ to!string(row.peek!int(1)) ~ " " ~ row.peek!string(2) ~ " [" ~ row.peek!string(3) ~ "]");
+			foreach (row; db.execute("SELECT id, number, title, state, is_pr FROM issues ORDER BY number DESC")) {
+				itemIds ~= row.peek!long(0);
+				bool isPr = row.peek!int(4) != 0;
+				itemKinds ~= isPr ? "pr" : "issue";
+				auto pfx = isPr ? "PR#" : "#";
+				issueList.items ~= (pfx ~ to!string(row.peek!int(1)) ~ " " ~ row.peek!string(2) ~ " [" ~ row.peek!string(3) ~ "]");
+			}
+			foreach (row; db.execute("SELECT id, number, title, state FROM pull_requests ORDER BY number DESC")) {
+				itemIds ~= row.peek!long(0);
+				itemKinds ~= "prtable";
+				issueList.items ~= ("PR#" ~ to!string(row.peek!int(1)) ~ " " ~ row.peek!string(2) ~ " [" ~ row.peek!string(3) ~ "]");
 			}
 			foreach (row; db.execute("SELECT id, number, title, category FROM discussions ORDER BY number DESC")) {
-				issueIds ~= row.peek!long(0);
-				isDiscussion ~= true;
+				itemIds ~= row.peek!long(0);
+				itemKinds ~= "discussion";
 				string cat = row.peek!string(3);
 				issueList.items ~= ("D#" ~ to!string(row.peek!int(1)) ~ " " ~ row.peek!string(2) ~ (cat.length ? " [" ~ cat ~ "]" : ""));
 			}
 			issueList.updateItems();
 		}
 
-		addBtn.onClick = {
-			refreshRepos();
-		};
+		addBtn.onClick = { refreshRepos(); };
 
 		repoList.onItemClick = {
 			int idx = repoList.selectedIndex;
-			if (idx < 0 || idx >= repoPaths.length) return;
-			string rpath = repoPaths[idx];
-			string rname = repoNames[idx];
-			migrateLegacyDbIfNeeded(rpath, rname);
-			currentDbPath = databasePath(rpath);
+			if (idx < 0 || idx >= repos.length) return;
+			auto r = repos[idx];
+			auto host = r.host.length ? r.host : "github.com";
+			migrateLegacyDbIfNeeded(host, r.owner, r.name, r.path);
+			currentDbPath = databasePath(host, r.owner, r.name);
 			refreshIssues();
 		};
 
 		syncBtn.onClick = {
 			int idx = repoList.selectedIndex;
-			if (idx < 0 || idx >= repoPaths.length) return;
-			string rpath = repoPaths[idx];
+			if (idx < 0 || idx >= repos.length) return;
+			auto r = repos[idx];
 			SyncOptions opts;
-			// Preflight large/fork syncs; user must confirm in the detail pane flow via Yes/No dialog when available.
+			opts.includePrs = true;
 			opts.confirm = (string message) {
-				detailEdit.text = "SYNC CONFIRMATION REQUIRED\n\n" ~ message ~
-					"\n\nGUI approved this sync after confirmation prompt. For scripts use CLI --yes.";
+				detailEdit.text = "SYNC CONFIRMATION\n\n" ~ message;
 				auto w = this.window;
 				if (w is null) return false;
 				w.showMessageBox(
 					UIString.fromRaw("Confirm sync"d),
-					UIString.fromRaw(to!dstring(message ~ "\n\nPress OK to continue sync."))
+					UIString.fromRaw(to!dstring(message ~ "\n\nPress OK to continue."))
 				);
 				return true;
 			};
-			if (syncRepo(rpath, opts)) {
-				currentDbPath = databasePath(rpath);
+			if (syncRepo(r.path, opts)) {
+				auto host = r.host.length ? r.host : "github.com";
+				currentDbPath = databasePath(host, r.owner, r.name);
 				refreshIssues();
 			}
 		};
@@ -142,14 +143,39 @@ class IssuesBrowserFrame : Widget {
 		};
 
 		issueList.onItemClick = {
-			if (currentDbPath.length == 0 || issueIds.length == 0) return;
+			if (currentDbPath.length == 0 || itemIds.length == 0) return;
 			int idx = issueList.selectedIndex;
-			if (idx < 0 || idx >= issueIds.length) return;
-			long iid = issueIds[idx];
-			bool disc = isDiscussion[idx];
+			if (idx < 0 || idx >= itemIds.length) return;
+			long iid = itemIds[idx];
+			auto kind = itemKinds[idx];
 			Database db = Database(currentDbPath);
 			string text;
-			if (!disc) {
+			if (kind == "discussion") {
+				auto stmt = db.prepare("SELECT number, title, category, body, url, author FROM discussions WHERE id=?1");
+				stmt.bind(1, iid);
+				foreach (row; stmt.execute()) {
+					text = "Discussion #" ~ to!string(row.peek!int(0)) ~ " " ~ row.peek!string(1) ~ "\n" ~
+						"Category: " ~ row.peek!string(2) ~ "\nAuthor: " ~ row.peek!string(5) ~ "\n" ~
+						row.peek!string(4) ~ "\n\n" ~ row.peek!string(3);
+					break;
+				}
+				stmt.reset();
+				auto cstmt = db.prepare("SELECT author, created_at, body FROM discussion_comments WHERE discussion_id=?1 ORDER BY created_at");
+				cstmt.bind(1, iid);
+				foreach (crow; cstmt.execute())
+					text ~= "\n\n--- " ~ crow.peek!string(0) ~ " " ~ crow.peek!string(1) ~ " ---\n" ~ crow.peek!string(2);
+				cstmt.reset();
+			} else if (kind == "prtable") {
+				auto stmt = db.prepare("SELECT number, title, state, body, url, author, merged FROM pull_requests WHERE id=?1");
+				stmt.bind(1, iid);
+				foreach (row; stmt.execute()) {
+					text = "Pull Request #" ~ to!string(row.peek!int(0)) ~ " " ~ row.peek!string(1) ~ "\n" ~
+						"State: " ~ row.peek!string(2) ~ (row.peek!int(6) ? " (merged)" : "") ~ "\n" ~
+						"Author: " ~ row.peek!string(5) ~ "\n" ~ row.peek!string(4) ~ "\n\n" ~ row.peek!string(3);
+					break;
+				}
+				stmt.reset();
+			} else {
 				auto stmt = db.prepare("SELECT number, title, state, body, url, author, pr_accepted, state_reason FROM issues WHERE id=?1");
 				stmt.bind(1, iid);
 				foreach (row; stmt.execute()) {
@@ -162,26 +188,8 @@ class IssuesBrowserFrame : Widget {
 				stmt.reset();
 				auto cstmt = db.prepare("SELECT author, created_at, body FROM comments WHERE issue_id=?1 ORDER BY created_at");
 				cstmt.bind(1, iid);
-				foreach (crow; cstmt.execute()) {
+				foreach (crow; cstmt.execute())
 					text ~= "\n\n--- " ~ crow.peek!string(0) ~ " " ~ crow.peek!string(1) ~ " ---\n" ~ crow.peek!string(2);
-				}
-				cstmt.reset();
-			} else {
-				auto stmt = db.prepare("SELECT number, title, category, body, url, author FROM discussions WHERE id=?1");
-				stmt.bind(1, iid);
-				foreach (row; stmt.execute()) {
-					text = "Discussion #" ~ to!string(row.peek!int(0)) ~ " " ~ row.peek!string(1) ~ "\n" ~
-						"Category: " ~ row.peek!string(2) ~ "\n" ~
-						"Author: " ~ row.peek!string(5) ~ "\n" ~
-						row.peek!string(4) ~ "\n\n" ~ row.peek!string(3);
-					break;
-				}
-				stmt.reset();
-				auto cstmt = db.prepare("SELECT author, created_at, body FROM discussion_comments WHERE discussion_id=?1 ORDER BY created_at");
-				cstmt.bind(1, iid);
-				foreach (crow; cstmt.execute()) {
-					text ~= "\n\n--- " ~ crow.peek!string(0) ~ " " ~ crow.peek!string(1) ~ " ---\n" ~ crow.peek!string(2);
-				}
 				cstmt.reset();
 			}
 			detailEdit.text = text;

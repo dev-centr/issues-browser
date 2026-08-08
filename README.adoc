@@ -3,141 +3,34 @@ ifndef::env-github[:icons: font]
 :toclevels: 2
 :sectanchors:
 
-ifdef::env-github[]
-++++
-<a id="readme-top"></a>
-<div align="center">
-<a href="https://github.com/dev-centr/issues-browser/graphs/contributors"><img src="https://img.shields.io/github/contributors/dev-centr/issues-browser.svg?style=for-the-badge" alt="Contributors"></a>
-<a href="https://github.com/dev-centr/issues-browser/network/members"><img src="https://img.shields.io/github/forks/dev-centr/issues-browser.svg?style=for-the-badge" alt="Forks"></a>
-<a href="https://github.com/dev-centr/issues-browser/stargazers"><img src="https://img.shields.io/github/stars/dev-centr/issues-browser.svg?style=for-the-badge" alt="Stargazers"></a>
-<a href="https://github.com/dev-centr/issues-browser/issues"><img src="https://img.shields.io/github/issues/dev-centr/issues-browser.svg?style=for-the-badge" alt="Issues"></a>
-<br />
-<h3 align="center">Issues Browser</h3>
-<p align="center">
-Local forge issues and discussions browser. Archives threads into per-repo SQLite for offline browse and search.<br />
-<a href="https://docs.devcentr.org/issues-browser/"><strong>Explore the docs »</strong></a><br /><br />
-<a href="https://github.com/dev-centr/issues-browser/issues">Report Bug</a>
-&middot;
-<a href="https://github.com/dev-centr/issues-browser/issues">Request Feature</a>
-</p>
-</div>
-++++
-endif::[]
-
-ifndef::env-github[]
-image:https://img.shields.io/github/contributors/dev-centr/issues-browser.svg?style=for-the-badge[Contributors,link=https://github.com/dev-centr/issues-browser/graphs/contributors]
-image:https://img.shields.io/github/forks/dev-centr/issues-browser.svg?style=for-the-badge[Forks,link=https://github.com/dev-centr/issues-browser/network/members]
-image:https://img.shields.io/github/stars/dev-centr/issues-browser.svg?style=for-the-badge[Stars,link=https://github.com/dev-centr/issues-browser/stargazers]
-image:https://img.shields.io/github/issues/dev-centr/issues-browser.svg?style=for-the-badge[Issues,link=https://github.com/dev-centr/issues-browser/issues]
-
 = Issues Browser
 
-Local forge issues and discussions browser. Archives threads into per-repo SQLite for offline browse and search.
+Local **forge metadata backup** for issues, pull requests, and discussions. Archives into central SQLite under `AMDphreak/.issues/archives`; browse offline via GUI/CLI; monitor continuously with `issuesd` + tray.
 
-link:https://docs.devcentr.org/issues-browser/[Explore the docs] ·
-link:https://github.com/dev-centr/issues-browser/issues[Report Bug] ·
-link:https://github.com/dev-centr/issues-browser/issues[Request Feature]
-endif::[]
+link:https://docs.devcentr.org/issues-browser/[Docs] ·
+link:https://github.com/dev-centr/issues-browser/issues[Issues]
 
-== About The Project
+== Components
 
-Issues Browser is an *offline archive and browser* for forge issues and discussions (not a place to file new tickets). Sync pulls remote threads into SQLite so you keep a local copy if the host or upstream repo disappears.
+* **Library** — sync engine, SDL forge profiles, SQLite schema, monitor store
+* **CLI** (`issues-browser`) — ProHelp (`openshellorg/prohelp`, PCDL) + sync/list/monitor
+* **GUI** (`issues-browser-gui`) — DlangUI browser
+* **Daemon** (`issuesd`) — incremental polling + localhost IPC `:17365`
+* **Tray** (`issues-browser-tray`) — Win32 tray client for the daemon
 
-* **Recursive git discovery**: Add a folder; the app finds repos (directories containing `.git`).
-* **Per-repo archive**: `<repo>/.issues/database.sqlite` inside the repo (gitignored automatically).
-* **Issues + discussions**: GitHub Discussions sync on by default; PRs excluded unless requested.
-* **Sync guardrails**: Preflight counts; warn/confirm on large repos and busy forks.
-* **GUI (DlangUI)** and **CLI** over the same library API.
-
-This is separate from the personal **issue-submissions** catalogue (`AMDphreak/.issue-submissions`), which stores draft/submitted issue markdown and screenshots for AI-assisted `gh` workflows.
-
-ifdef::env-github[]
-++++
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-++++
-endif::[]
-
-== Installation
-
-=== Requirements
-
-* **gh** CLI authenticated for GitHub API / GraphQL access.
-* **SQLite**: On Windows, use the bundled d2sqlite3 `all-included` config (default here) or provide `sqlite3.lib`.
-
-=== Build
+== Quick start
 
 [source,bash]
 ----
 dub build --config=cli
-dub build --config=application   # GUI (requires dlangui)
-dub build --config=library
+issues-browser --sync ./myrepo --yes
+issues-browser --monitor-add owner/name
+dub build --config=daemon && issuesd
+dub build --config=tray && issues-browser-tray
 ----
 
-ifdef::env-github[]
-++++
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-++++
-endif::[]
-
-== Usage
-
-=== Quick start
-
-. Add a folder that contains git repos (e.g. your `code/github.com/dev-centr`).
-. Sync: fetches issues and discussions into `<repo>/.issues/database.sqlite` (adds `.issues/` to that repo's `.gitignore`).
-. Browse and search in the GUI or via CLI.
-
-CLI examples:
-
-[source,bash]
-----
-issues-browser --add-folder Z:\code\github.com\dev-centr
-issues-browser --find-dbs Z:\code\github.com\dev-centr
-issues-browser --sync Z:\code\github.com\dev-centr\issues-browser
-issues-browser --sync Z:\code\github.com\.clones\npm\cli --yes
-issues-browser --list Z:\code\github.com\dev-centr\issues-browser --search "antora"
-----
-
-Large repos and forks prompt for confirmation unless you pass `--yes`.
-
-=== Documentation
-
-Full docs: https://docs.devcentr.org/issues-browser/
-(Do not publish a secondary Antora site from this repo.)
-
-[source,bash]
-----
-pnpm install
-pnpm run build        # local/CI validation only
-pnpm run build:local  # local playbook (sibling repos)
-----
-
-ifdef::env-github[]
-++++
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-++++
-endif::[]
+Archives default to `$CODE_ROOT/github.com/AMDphreak/.issues/archives/<host>/<owner>/<repo>/database.sqlite`.
 
 == License
 
-MIT
-
-ifdef::env-github[]
-++++
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-++++
-endif::[]
-
-== Contact
-
-DevCentr.org — support@devcentr.org
-
-* Project: https://github.com/dev-centr/issues-browser
-* Docs: https://docs.devcentr.org/issues-browser/
-* Site: https://devcentr.org
-
-ifdef::env-github[]
-++++
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-++++
-endif::[]
+MIT (application). ProHelp dependency is PCDL 1.0 — see https://github.com/openshellorg/prohelp

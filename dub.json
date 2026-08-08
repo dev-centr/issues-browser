@@ -1,6 +1,6 @@
 {
 	"name": "issues-browser",
-	"description": "Local forge issues and discussions browser. Syncs into per-repo SQLite for offline archive and browse.",
+	"description": "Forge metadata backup: issues, PRs, discussions into central SQLite archives. CLI, GUI, daemon, tray.",
 	"authors": ["Dev-Centr"],
 	"license": "MIT",
 	"copyright": "Copyright © 2025–2026, Dev-Centr",
@@ -8,17 +8,28 @@
 	"documentationURL": "https://docs.devcentr.org/issues-browser/",
 	"dependencies": {
 		"d2sqlite3": "~>1.0.0",
-		"stdx-allocator": "~>3.0.2"
+		"stdx-allocator": "~>3.0.2",
+		"sdlang-d": "~>0.10.6"
 	},
 	"subConfigurations": {
 		"d2sqlite3": "all-included"
 	},
+	"copyFiles": [
+		"profiles/forge-profiles.sdl",
+		"help.sdl"
+	],
 	"configurations": [
 		{
 			"name": "application",
 			"targetType": "executable",
 			"targetName": "issues-browser-gui",
 			"mainSourceFile": "source/app_gui.d",
+			"excludedSourceFiles": [
+				"source/app_cli.d",
+				"source/app_daemon.d",
+				"source/app_tray.d",
+				"source/tray/*"
+			],
 			"dependencies": {
 				"dlangui": "~>0.10.8"
 			},
@@ -39,6 +50,12 @@
 			"targetType": "executable",
 			"targetName": "issues-browser",
 			"mainSourceFile": "source/app_cli.d",
+			"excludedSourceFiles": [
+				"source/app_gui.d",
+				"source/app_daemon.d",
+				"source/app_tray.d",
+				"source/tray/*"
+			],
 			"subConfigurations": {
 				"d2sqlite3": "all-included"
 			},
@@ -50,9 +67,48 @@
 			]
 		},
 		{
+			"name": "daemon",
+			"targetType": "executable",
+			"targetName": "issuesd",
+			"mainSourceFile": "source/app_daemon.d",
+			"excludedSourceFiles": [
+				"source/app_gui.d",
+				"source/app_cli.d",
+				"source/app_tray.d",
+				"source/tray/*"
+			],
+			"lflags-windows-x86_64": [
+				"/LIBPATH:$PACKAGE_DIR/vendor/sqlite/win64"
+			],
+			"copyFiles-windows-x86_64": [
+				"vendor/sqlite/win64/sqlite3.dll"
+			]
+		},
+		{
+			"name": "tray",
+			"targetType": "executable",
+			"targetName": "issues-browser-tray",
+			"mainSourceFile": "source/app_tray.d",
+			"excludedSourceFiles": [
+				"source/app_gui.d",
+				"source/app_cli.d",
+				"source/app_daemon.d"
+			],
+			"libs-windows": ["user32", "shell32", "gdi32"],
+			"lflags-windows-x86_64": [
+				"/LIBPATH:$PACKAGE_DIR/vendor/sqlite/win64"
+			]
+		},
+		{
 			"name": "library",
 			"targetType": "library",
-			"excludedSourceFiles": ["source/app_gui.d", "source/app_cli.d"]
+			"excludedSourceFiles": [
+				"source/app_gui.d",
+				"source/app_cli.d",
+				"source/app_daemon.d",
+				"source/app_tray.d",
+				"source/tray/*"
+			]
 		}
 	],
 	"sourcePaths": ["source"],

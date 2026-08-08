@@ -1,0 +1,33 @@
+command "issues-browser" {
+    title "Issues Browser"
+    summary "Forge metadata backup: issues, PRs, discussions — offline archive, CLI, daemon, tray"
+    description "Automated backup of forge issues, pull requests, discussions, and comments into a central SQLite archive under AMDphreak/.issues/archives. Browse offline; monitor continuously via issuesd."
+    homepage "https://github.com/dev-centr/issues-browser"
+    docs "https://docs.devcentr.org/issues-browser/"
+    issues "https://github.com/dev-centr/issues-browser/issues"
+
+    section "usage" {
+        summary "Common commands"
+        content "issues-browser --sync <repo-path>\nissues-browser --list <owner/name-or-path>\nissues-browser --monitor add|remove|list <owner/name>\nissues-browser --find-dbs [root]\nissuesd --root <path>\nissues-browser-tray"
+
+        example "Sync a local clone (PRs on by default)" "issues-browser --sync ./myrepo --yes"
+        example "Exclude PRs" "issues-browser --sync ./myrepo --no-prs --yes"
+        example "Add monitored repo" "issues-browser --monitor add owner/name"
+        example "Progressive help" "issues-browser ?"
+    }
+
+    section "backup" {
+        summary "What is archived"
+        content "Issues, pull requests (default), discussions, and comment threads. Stored at <archive-root>/archives/<host>/<owner>/<repo>/database.sqlite. Bodies stay in SQLite; contents/ is reserved for future blob offload."
+    }
+
+    section "daemon" {
+        summary "Continuous monitoring"
+        content "issuesd polls monitor.sdl and exposes localhost HTTP JSON on 127.0.0.1:17365 (/health /status /monitor /sync-now). Tray app talks to the daemon."
+    }
+
+    section "prohelp" {
+        summary "Help system"
+        content "help.sdl uses the OpenShellOrg ProHelp schema. Runtime intercept is issuesbrowser.prohelpcompat (sdlang); full openshellorg/prohelp can replace it when the toolchain builds that package. Try: issues-browser ?   or   issues-browser ? backup"
+    }
+}

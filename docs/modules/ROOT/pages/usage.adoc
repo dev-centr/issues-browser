@@ -1,55 +1,50 @@
 = Usage
 
-== GUI
-
-. Start the application (`dub run --config=application` or the installed `issues-browser-gui` executable).
-. Enter a path to a folder that contains git repos.
-. Click *Add folder* to discover repos.
-. Select a repo and click *Sync selected*. Large or forked repos ask for confirmation first.
-. Click an issue or discussion in the middle list to view body and comments.
-. Use *Refresh list* after adding a folder or syncing.
-
 == CLI
 
-*Discover repos:*
+Progressive help (ProHelp):
 
-  issues-browser --add-folder /path/to/parent/folder
+  issues-browser ?
 
-*Find existing archives (`**/.issues/database.sqlite`):*
+Sync (PRs included by default):
 
-  issues-browser --find-dbs /path/to/code/root
+  issues-browser --sync /path/to/repo --yes
+  issues-browser --sync owner/name --yes
+  issues-browser --sync /path/to/repo --no-prs
 
-*Sync one repo or all repos in a folder:*
+List / search:
 
-  issues-browser --sync /path/to/repo
-  issues-browser --sync /path/to/folder/containing/repos
-  issues-browser --sync /path/to/busy-fork --yes
-  issues-browser --sync /path/to/repo --no-discussions
-  issues-browser --sync /path/to/repo --include-prs
-
-*List / search:*
-
-  issues-browser --list /path/to/repo
+  issues-browser --list owner/name
   issues-browser --list /path/to/repo --search "antora"
 
-*Help:*
+Monitor list (for the daemon):
 
-  issues-browser --help
+  issues-browser --monitor-add owner/name
+  issues-browser --monitor-list
+  issues-browser --monitor-remove owner/name
 
-== Where data is stored
+Find archives:
 
-For a repo at `parent/reponame`, the SQLite file is at `parent/reponame/.issues/database.sqlite`.
+  issues-browser --find-dbs
+  issues-browser --root /path/to/.issues --find-dbs /path/to/.issues
 
-On first sync the app appends a commented `.issues/` entry to that repo's `.gitignore` when missing.
+== Daemon
 
-Legacy path `parent/.issues/<reponame>.sqlite` is migrated automatically when present.
+  issuesd --root /path/to/.issues
+  issuesd --once          # one sync pass then exit
+  issuesd --port 17365
 
-== Sync guardrails
+IPC (localhost only): `GET /health`, `GET /status`, `GET /monitor`, `POST /monitor/add`, `POST /monitor/remove`, `POST /sync-now`, `GET /debug`.
 
-Before downloading bodies, sync queries issue/discussion counts (and fork status).
+== Tray
 
-* Soft warning around **500** issues+discussions.
-* Strong confirmation around **2000** issues+discussions.
-* Forks at/above the soft threshold always require approval.
+  issues-browser-tray --port 17365
 
-Pass `--yes` (CLI) to approve non-interactively. GUI uses a Yes/No dialog.
+Windows system tray (Win32). Start `issuesd` first. Menu: status, sync now, open archives, quit.
+Qt settings UI can wrap the same IPC later; tray icon uses a native shim because `dqt` lacks `QSystemTrayIcon` today.
+
+== GUI
+
+  dub run --config=application
+
+Add a folder of git repos, sync selected, browse issues/PRs/discussions from the central archive DB.

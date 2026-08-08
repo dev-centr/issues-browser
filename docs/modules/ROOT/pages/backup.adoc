@@ -1,0 +1,40 @@
+= Forge metadata backup
+
+Issues Browser is an **automated forge metadata backup** tool. It archives issues, pull requests, discussions, and comment threads so correspondence survives if a host, org, or upstream repo disappears.
+
+== What is backed up
+
+* Issues (bodies + comments)
+* Pull requests / merge requests (default on — they answer “what fixed this?”)
+* Discussions (when the forge supports them)
+* Lightweight issue↔PR links inferred from `#N` references in PR bodies
+
+Bodies stay in SQLite for typical archives. Each archive directory also has a reserved `contents/` folder for a future blob offload if measured size requires it.
+
+== Where data lives
+
+Central root (default `$CODE_ROOT/github.com/AMDphreak/.issues`):
+
+----
+archives/<host>/<owner>/<repo>/database.sqlite
+monitor.sdl          # daemon monitor list (local)
+submissions/         # separate: AI issue drafts (git-tracked)
+----
+
+Override with `--root` or `ISSUES_BROWSER_ROOT`.
+
+== Continuous monitoring
+
+`issuesd` polls `monitor.sdl` and exposes localhost JSON IPC on `127.0.0.1:17365`.
+The tray app (`issues-browser-tray`) adds/removes monitors and triggers sync-now.
+Rate limits use SDL `rate_limit` (min interval + 429 backoff).
+
+== Guardrails
+
+Before a full download, GraphQL preflight counts issues/PRs/discussions and fork status.
+Large or busy-fork archives require confirmation (`--yes` for non-interactive).
+
+== Providers
+
+Forge details live in SDLang profiles (`profiles/forge-profiles.sdl`), aligned with `dlang-supplemental/repo-get` forge profiles.
+GitHub is fully implemented via `gh`; GitLab profile is stubbed for `glab`.

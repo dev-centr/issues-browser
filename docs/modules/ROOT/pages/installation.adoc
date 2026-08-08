@@ -2,30 +2,27 @@
 
 == Requirements
 
-* **gh** CLI authenticated for GitHub API access (`gh auth login`).
-* **SQLite**: The project uses the d2sqlite3 D binding. On Windows, the default configuration may expect `sqlite3.lib` on your library path. You can:
-** Install SQLite (e.g. from https://sqlite.org/download.html) and add the lib path to your environment, or
-** Use the `all-included` subConfiguration for d2sqlite3 (see Build).
+* **gh** CLI authenticated for GitHub API / GraphQL (`gh auth login`).
+* **SQLite**: bundled via d2sqlite3 `all-included`. On Windows, this repo vendors `vendor/sqlite/win64` for linking.
+* Optional: **glab** when using the GitLab forge profile stub.
 
 == Build
 
 [source,bash]
 ----
-dub build --config=cli
-dub build --config=application   # GUI (requires dlangui)
-dub build --config=library       # library only
+dub build --config=cli        # issues-browser
+dub build --config=daemon     # issuesd
+dub build --config=tray       # issues-browser-tray (Windows tray)
+dub build --config=application  # GUI (dlangui)
+dub build --config=library
 ----
 
-On Windows, this repo vendors `vendor/sqlite/win64/sqlite3.lib` (+ DLL) and wires `/LIBPATH` in `dub.json` for the CLI/GUI configs. `sqlite3.dll` is copied beside the executable on build.
+Windows CLI/daemon link against vendored `sqlite3.lib`; `sqlite3.dll` is copied beside the executable.
 
-[source,bash]
-----
-dub build --config=cli
-----
+== ProHelp-compatible help
 
-CLI target name: `issues-browser`. GUI target name: `issues-browser-gui`.
+CLI ships `help.sdl` in the https://github.com/openshellorg/prohelp[ProHelp] schema and intercepts `?` / `--help` via `issuesbrowser.prohelpcompat` (sdlang-d). Wiring the full `openshellorg/prohelp` library is schema-compatible; DMD 2.x currently AVs while compiling that package on this Windows toolchain, so the compat layer is the default.
 
 == Notes
 
-This project was renamed from `issue-tracker` to `issues-browser` to match its role as an offline archive/browser (not a submission tracker).
-Issue draft/screenshot submissions for AI/`gh` workflows live in a separate user repo: `AMDphreak/.issue-submissions`.
+Renamed from `issue-tracker`. Submissions/drafts live in `AMDphreak/.issues/submissions/`; offline archives live in `AMDphreak/.issues/archives/`.

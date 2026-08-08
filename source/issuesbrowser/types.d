@@ -2,25 +2,25 @@ module issuesbrowser.types;
 
 /// A discovered git repository (path and optional remote).
 struct RepoInfo {
-	string path;       /// Absolute or relative path to repo root
-	string remote;     /// e.g. "https://github.com/owner/repo.git" or empty
-	string owner;      /// Forge owner (from remote)
-	string name;       /// Repo name (from remote or folder name)
-	string host;       /// e.g. "github.com", "gitlab.com"
-	bool isFork;       /// From forge metadata when known
+	string path;
+	string remote;
+	string owner;
+	string name;
+	string host;
+	bool isFork;
 }
 
 /// Options controlling sync volume and confirmation.
 struct SyncOptions {
-	bool force;                    /// Skip confirmation prompts
+	bool force;
 	bool includeDiscussions = true;
-	bool includePrs = false;       /// Default: true issues only (exclude PRs)
-	int warnThreshold = 500;       /// Soft warning size
-	int requireConfirmThreshold = 2000; /// Require explicit approval at/above this
-	bool delegate(string message) confirm; /// Return true to proceed
+	bool includePrs = true;        /// PRs on by default (issue history)
+	int warnThreshold = 500;
+	int requireConfirmThreshold = 2000;
+	string archiveRoot;            /// override central .issues root
+	bool delegate(string message) confirm;
 }
 
-/// Preflight counts from the forge (before downloading bodies).
 struct SyncPreflight {
 	int issueCount;
 	int discussionCount;
@@ -31,32 +31,31 @@ struct SyncPreflight {
 	bool needsConfirm;
 }
 
-/// Issue row as stored and queried.
 struct IssueRow {
 	long id;
 	long repoId;
 	int number;
 	string title;
-	string state;      /// "OPEN" | "CLOSED"
+	string state;
 	string body;
 	string url;
 	string createdAt;
 	string closedAt;
 	string author;
-	bool prAccepted;   /// true if closed by merged PR
-	string stateReason; /// e.g. "duplicate", "completed"
+	bool prAccepted;
+	string stateReason;
+	bool isPr;
+	string updatedAt;
 }
 
-/// Comment row (issue or discussion).
 struct CommentRow {
 	long id;
-	long parentId;     /// issue id or discussion id
+	long parentId;
 	string body;
 	string author;
 	string createdAt;
 }
 
-/// Discussion row.
 struct DiscussionRow {
 	long id;
 	long repoId;
@@ -67,4 +66,27 @@ struct DiscussionRow {
 	string url;
 	string createdAt;
 	string author;
+}
+
+struct MonitoredRepo {
+	string host;
+	string owner;
+	string name;
+	string remote;
+	int pollIntervalSec = 300;
+	string lastSync;
+	string lastError;
+	bool enabled = true;
+}
+
+struct ForgeProfile {
+	string name;
+	string[] matchers;
+	string cli;
+	string[] listIssuesCmd;
+	string[] listPrsCmd;
+	string[] listDiscussionsHint;
+	bool graphql;
+	int minIntervalMs = 1000;
+	int on429BackoffS = 60;
 }

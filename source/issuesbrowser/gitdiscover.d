@@ -2,11 +2,10 @@ module issuesbrowser.gitdiscover;
 
 import std.file;
 import std.path;
-import std.stdio;
 import std.string;
 import std.algorithm;
 import issuesbrowser.types;
-import issuesbrowser.database;
+import issuesbrowser.paths;
 
 /// Recursively find all directories that contain a `.git` (file or directory).
 RepoInfo[] discoverRepos(string rootPath) {
@@ -17,19 +16,8 @@ RepoInfo[] discoverRepos(string rootPath) {
 	return result;
 }
 
-/// Recursively find existing archives: `**/.issues/database.sqlite`.
-string[] discoverIssueDatabases(string rootPath) {
-	string[] result;
-	auto root = absolutePath(rootPath);
-	if (!exists(root) || !isDir(root)) return result;
-	discoverDbRecurse(root, result);
-	return result;
-}
-
-/// Repo root for a database path (`…/repo/.issues/database.sqlite` → `…/repo`).
-string repoPathFromDatabase(string dbPath) {
-	return dirName(dirName(dbPath));
-}
+/// Re-export archive discovery from paths.
+alias discoverIssueDatabases = issuesbrowser.paths.discoverIssueDatabases;
 
 private void discoverRecurse(string dir, ref RepoInfo[] result) {
 	foreach (e; dirEntries(dir, SpanMode.shallow)) {
@@ -37,8 +25,8 @@ private void discoverRecurse(string dir, ref RepoInfo[] result) {
 		if (name == "." || name == "..") continue;
 		auto full = e.name;
 		if (!e.isDir) continue;
-		// Skip the username-level submissions repo and nested archives.
-		if (name == ".issue-submissions" || name == ".issues") continue;
+		if (name == ".issues" || name == ".issue-submissions" || name == "archives" || name == "submissions")
+			continue;
 		auto gitPath = buildPath(full, ".git");
 		if (exists(gitPath)) {
 			RepoInfo info;
@@ -51,25 +39,6 @@ private void discoverRecurse(string dir, ref RepoInfo[] result) {
 	}
 }
 
-private void discoverDbRecurse(string dir, ref string[] result) {
-	foreach (e; dirEntries(dir, SpanMode.shallow)) {
-		auto name = baseName(e.name);
-		if (name == "." || name == "..") continue;
-		auto full = e.name;
-		if (!e.isDir) continue;
-		if (name == ".issues") {
-			auto db = buildPath(full, dbFileName);
-			if (exists(db))
-				result ~= db;
-			continue;
-		}
-		if (name == ".git" || name == "node_modules" || name == ".issue-submissions")
-			continue;
-		discoverDbRecurse(full, result);
-	}
-}
-
-/// Fill remote, owner, name, host for a repo path by reading `.git/config`.
 void getRemoteAndName(string repoPath, ref RepoInfo info) {
 	auto configPath = buildPath(repoPath, ".git", "config");
 	if (!exists(configPath)) {
@@ -94,12 +63,10 @@ void getRemoteAndName(string repoPath, ref RepoInfo info) {
 	if (info.name.length == 0) info.name = baseName(repoPath);
 }
 
-/// Parse owner/name/host from common forge remote URLs (GitHub, GitLab, generic).
 void parseRemoteUrl(string url, ref RepoInfo info) {
 	string host;
 	string pathPart;
 	if (url.startsWith("git@")) {
-		// git@host:owner/repo.git
 		auto colon = url.indexOf(":");
 		if (colon <= 4) return;
 		host = url[4 .. colon];
@@ -119,7 +86,6 @@ void parseRemoteUrl(string url, ref RepoInfo info) {
 	if (slash > 0) {
 		info.owner = pathPart[0 .. slash];
 		info.name = pathPart[slash + 1 .. $];
-		// Nested groups (GitLab): keep last segment as name, rest as owner path.
 		auto last = info.name.lastIndexOf("/");
 		if (last >= 0) {
 			info.owner = info.owner ~ "/" ~ info.name[0 .. last];

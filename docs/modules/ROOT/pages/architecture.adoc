@@ -2,45 +2,57 @@
 
 == Components
 
-* **issuesbrowser (library)**: Types, git discovery, SQLite schema, forge sync, gitignore helper.
-* **application (GUI)**: DlangUI app; repo list, issue/discussion list, detail view, sync trigger.
-* **cli**: Command-line interface for sync, list, search, and archive discovery.
+|===
+| Component | Binary | Role
 
-== Naming
+| Library (`issuesbrowser`)
+| —
+| Paths, SQLite schema, forge SDL profiles, sync engine, monitor store, IPC helpers
 
-The product is an *offline browser/archive*, not a tracker for creating tickets. Forge-agnostic naming (`issues-browser`) leaves room for GitLab and others; the first sync backend is GitHub via `gh`.
+| CLI
+| `issues-browser`
+| Sync/list/monitor + ProHelp intercept (`help.sdl`)
 
-== Git discovery
+| GUI
+| `issues-browser-gui`
+| DlangUI offline browser
 
-Recursive walk of the given folder: any directory that contains a `.git` (file or directory) is treated as a repo. Remote URL, host, owner, and name are read from `.git/config`.
+| Daemon
+| `issuesd`
+| Poll monitored repos; localhost HTTP JSON IPC (`127.0.0.1:17365`)
 
-Username-level catalogues named `.issue-submissions` and nested `.issues` directories are skipped during repo discovery so personal submission trees are not mistaken for project clones.
+| Tray
+| `issues-browser-tray`
+| Win32 tray client for the daemon (Qt wrapper planned for settings)
+|===
 
-Archive discovery walks for `**/.issues/database.sqlite` only (not every `.issues` folder).
+== Storage
 
-== Database schema
+Central root (not inside each project clone):
 
-* `repos`: path, remote, owner, name, host, updated_at.
-* `issues`: repo_id, number, title, state, body, url, created_at, closed_at, author, pr_accepted, state_reason.
-* `comments`: issue_id, body, author, created_at.
-* `discussions`: repo_id, number, title, category, body, url, created_at, author.
-* `discussion_comments`: discussion_id, body, author, created_at.
-* `sync_meta`: repo_id, last_sync.
+----
+<archive-root>/archives/<host>/<owner>/<repo>/database.sqlite
+<archive-root>/archives/<host>/<owner>/<repo>/contents/   # reserved
+<archive-root>/monitor.sdl
+----
 
-One SQLite file per repo: `<repo>/.issues/database.sqlite`.
+Legacy paths (`<repo>/.issues/database.sqlite` and `parent/.issues/<name>.sqlite`) migrate on sync.
 
-=== Bodies in SQLite
+== Schema highlights
 
-Issue and discussion bodies stay in SQLite. For typical personal/org archives this is efficient and keeps search simple. The expensive part of huge upstreams (e.g. busy forks) is *API sync volume*, which is why guardrails exist. Splitting bodies onto the filesystem is reserved for a later optimization if a measured need appears.
+* `issues` with `is_pr`, `updated_at`
+* `pull_requests` + `issue_pr_links`
+* `discussions` / `discussion_comments`
+* `sync_meta` watermarks: `issues_updated_at`, `prs_updated_at`, `discussions_cursor`
 
-== Sync process
+== Forge profiles (SDL)
 
-. GraphQL preflight: issue/discussion/PR counts and fork/parent metadata.
-. User confirmation when thresholds or fork risk apply.
-. Ensure `<repo>/.gitignore` contains `.issues/`.
-. REST: `gh api repos/owner/repo/issues --paginate --state all` (PRs skipped unless `--include-prs`).
-. Per issue: timeline (close reason) + comments.
-. GraphQL: discussions + comments (paginated); skipped cleanly when Discussions are disabled.
-. Upsert into SQLite; record `sync_meta.last_sync`.
+`profiles/forge-profiles.sdl` declares matchers, CLI tool, list commands, GraphQL flag, and rate limits.
+Shared schema also lands in `dlang-supplemental/repo-get` (`getForge`).
 
-Background/timer sync in the GUI remains a future enhancement.
+== Related project gaps
+
+* `AMDphreak/ver` — no CI/releases; multi-VCS UX mostly stubs — not a dependency
+* `dev-centr/rules-manager` — IPC pattern reused; Electron tray not adopted; no published releases
+* `tim-dlang/dqt` — no `QSystemTrayIcon` yet; Win32 shim used for tray
+* `repo-get` — Linux release artifacts only; forge profiles added for metadata tooling
