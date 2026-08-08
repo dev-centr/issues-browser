@@ -27,26 +27,6 @@ Database openDb(string repoPath) {
 	return Database(databasePath(repoPath));
 }
 
-/// Ensure `.issues/` is gitignored in the target repo (with a short comment).
-void ensureRepoGitignore(string repoPath) {
-	auto giPath = buildPath(repoPath, ".gitignore");
-	string content;
-	if (exists(giPath))
-		content = readText(giPath);
-	foreach (line; content.splitLines) {
-		auto t = line.strip;
-		if (t == ".issues/" || t == ".issues" || t == "**/.issues/" || t.startsWith(".issues/"))
-			return;
-	}
-	auto block =
-		"\n# Local issues-browser archive (issues + discussions SQLite; do not commit)\n" ~
-		".issues/\n";
-	if (content.length > 0 && !content.endsWith("\n"))
-		content ~= "\n";
-	content ~= block;
-	std.file.write(giPath, content);
-}
-
 /// Migrate legacy `parent/.issues/<reponame>.sqlite` → `<repo>/.issues/database.sqlite`.
 void migrateLegacyDbIfNeeded(string repoPath, string repoName) {
 	auto neu = databasePath(repoPath);

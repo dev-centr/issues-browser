@@ -1,6 +1,17 @@
-= Installer notes
+= Installer
 
-Windows/installer packaging for **issues-browser** (formerly issue-tracker).
+Windows installer can be built with NSIS or Inno Setup.
 
-Build the CLI or GUI with Dub, then package the resulting `issues-browser` binary with your preferred installer toolchain.
-See the main project README and docs for sync paths (`<repo>/.issues/database.sqlite`) and guardrails.
+== NSIS (optional)
+
+. Install NSIS and ensure `makensis` is on PATH.
+. From repo root after building: `dub build --config=cli --build=release`
+. Run the NSIS script (when added) to produce `issues-browser-setup.exe`.
+
+== Inno Setup (optional)
+
+. Install Inno Setup.
+. Create a `.iss` script that installs the CLI executable and optionally the GUI executable to a chosen directory and adds it to PATH.
+. Compile to produce `issues-browser-setup.exe`.
+
+Output directory for installers can be `installer/output/` (gitignored).

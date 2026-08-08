@@ -11,6 +11,7 @@ import std.array;
 import issuesbrowser.types;
 import issuesbrowser.database;
 import issuesbrowser.gitdiscover;
+import issuesbrowser.gitignore;
 
 /// Sync one repo's issues (and discussions by default) into `<repo>/.issues/database.sqlite`.
 /// Returns false if aborted by guardrails / user decline.
@@ -36,7 +37,7 @@ bool syncRepo(string repoPath, SyncOptions opts = SyncOptions.init) {
 	}
 
 	migrateLegacyDbIfNeeded(repoPath, info.name);
-	ensureRepoGitignore(repoPath);
+	ensureIssuesGitignore(repoPath);
 
 	auto db = openDb(repoPath);
 	initSchema(db);
