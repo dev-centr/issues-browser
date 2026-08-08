@@ -1,0 +1,49 @@
+// Bootstrap equivalency rules for initial dependency fetching
+ruleset "downloaders" {
+    matcher "platform:linux" "platform:macos" "platform:bsd" "platform:windows"
+    rule {
+        check "curl" "--version"
+        replace "download-url $URL $PATH" "curl -L -o $PATH $URL"
+    }
+}
+
+ruleset "wget-fallback" {
+    matcher "platform:linux" "platform:bsd"
+    rule {
+        check "wget" "--version"
+        replace "download-url $URL $PATH" "wget -O $PATH $URL"
+    }
+}
+
+ruleset "powershell-fallback" {
+    matcher "platform:windows"
+    rule {
+        check "powershell" "-Command" "Get-Help"
+        replace "download-url $URL $PATH" "powershell -Command Invoke-WebRequest -Uri $URL -OutFile $PATH"
+    }
+}
+
+// Basic package managers for bootstrapping VCS
+ruleset "apt-bootstrap" {
+    matcher "platform:linux" "distro:ubuntu"
+    rule {
+        replace "install-git" "sudo apt-get install -y git"
+        replace "install-svn" "sudo apt-get install -y subversion"
+    }
+}
+
+ruleset "choco-bootstrap" {
+    matcher "platform:windows"
+    rule {
+        check "choco" "--version"
+        replace "install-git" "choco install -y git"
+    }
+}
+
+ruleset "brew-bootstrap" {
+    matcher "platform:macos"
+    rule {
+        check "brew" "--version"
+        replace "install-git" "brew install git"
+    }
+}

@@ -1,0 +1,72 @@
+vcs "git" {
+    matcher r"\.git$" r"^git\+"
+    check "git" "--version"
+    clone "git" "clone" "--depth" "1" "$URL" "$PATH"
+    pull "git" "-p" "$PATH" "pull"
+    status "git" "-C" "$PATH" "status" "--short" 
+}
+
+vcs "svn" {
+    matcher r"^svn://" r"/svn/"
+    check "svn" "--version"
+    clone "svn" "checkout" "$URL" "$PATH"
+    pull "svn" "update" "$PATH"
+    status "svn" "status" "$PATH"
+}
+
+vcs "hg" {
+    matcher r"^hg\+" r"/hg/"
+    check "hg" "--version"
+    clone "hg" "clone" "$URL" "$PATH"
+    pull "hg" "pull" "-u" "-R" "$PATH"
+    status "hg" "status" "-R" "$PATH"
+}
+
+vcs "jj" {
+    matcher r"^jj\+"
+    check "jj" "--version"
+    clone "jj" "git" "clone" "$URL" "$PATH"
+    pull "jj" "git" "fetch" "--repository" "$PATH"
+    status "jj" "status" "--repository" "$PATH"
+}
+
+vcs "darcs" {
+    matcher r"^darcs\+"
+    check "darcs" "--version"
+    clone "darcs" "get" "$URL" "$PATH"
+    pull "darcs" "pull" "--repodir" "$PATH"
+    status "darcs" "whatsnew" "--repodir" "$PATH"
+}
+
+vcs "fossil" {
+    matcher r"\.fossil$" r"^fossil\+"
+    check "fossil" "version"
+    clone "fossil" "clone" "$URL" "$PATH.fossil"
+    open "fossil" "open" "$PATH.fossil" "--workdir" "$PATH"
+    pull "fossil" "update" "--workdir" "$PATH"
+    status "fossil" "status" "--workdir" "$PATH"
+}
+
+vcs "bazaar" {
+    matcher r"^bzr\+" r"^lp:"
+    check "bzr" "--version"
+    clone "bzr" "branch" "$URL" "$PATH"
+    pull "bzr" "pull" "--directory" "$PATH"
+    status "bzr" "status" "--directory" "$PATH"
+}
+
+vcs "cvs" {
+    matcher r"^:pserver:" r"^cvs\+"
+    check "cvs" "--version"
+    clone "cvs" "-d" "$URL" "checkout" "-d" "$PATH" "."
+    pull "cvs" "update" "$PATH"
+    status "cvs" "status" "$PATH"
+}
+
+vcs "p4" {
+    matcher r"^p4:" r"//depot/"
+    check "p4" "-V"
+    clone "p4" "sync" "$URL/..."
+    pull "p4" "sync" "$PATH/..."
+    status "p4" "status" "$PATH"
+}

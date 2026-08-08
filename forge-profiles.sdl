@@ -1,0 +1,29 @@
+// Forge metadata profiles (issues / PRs / discussions).
+// Consumed by tools such as dev-centr/issues-browser.
+// Placeholders: $OWNER $NAME $HOST $SINCE
+
+forge "github" {
+    matcher r"github\.com"
+    cli "gh"
+    check "gh" "--version"
+    list-issues "api" "repos/$OWNER/$NAME/issues" "--paginate" "--state" "all"
+    list-prs "api" "repos/$OWNER/$NAME/pulls" "--paginate" "--state" "all"
+    graphql true
+    rate_limit {
+        min_interval_ms 1000
+        on_429_backoff_s 60
+    }
+}
+
+forge "gitlab" {
+    matcher r"gitlab\.com" r"gitlab\."
+    cli "glab"
+    check "glab" "--version"
+    list-issues "api" "projects/$OWNER%2F$NAME/issues"
+    list-prs "api" "projects/$OWNER%2F$NAME/merge_requests"
+    graphql false
+    rate_limit {
+        min_interval_ms 1000
+        on_429_backoff_s 60
+    }
+}

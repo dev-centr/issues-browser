@@ -12,10 +12,12 @@
 ----
 dub build --config=cli        # issues-browser
 dub build --config=daemon     # issuesd
-dub build --config=tray       # issues-browser-tray (Windows tray)
+dub build --config=tray       # issues-browser-tray (needs Qt 6 + dqt git fork)
 dub build --config=application  # GUI (dlangui)
 dub build --config=library
 ----
+
+Forge profiles come from the DUB package `repo-get` (`~>0.3.0`). The tray config depends on `dqt:widgets` via git (`dlang-supplemental/dqt` pinned commit), not the Dub registry.
 
 Windows CLI/daemon link against vendored `sqlite3.lib`; `sqlite3.dll` is copied beside the executable.
 
