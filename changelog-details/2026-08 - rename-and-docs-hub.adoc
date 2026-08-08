@@ -1,0 +1,12 @@
+= 2026-08 — Rename and docs hub
+
+== Summary
+
+Project renamed from issue-tracker to issues-browser. Documentation publishes through the Dev-Centr Antora hub rather than a secondary GitHub Pages site.
+
+== Details
+
+* Module/CLI/GUI rename to `issuesbrowser` / Issues Browser.
+* Hub playbook sources: `https://github.com/dev-centr/issues-browser.git`.
+* Homepage and README docs CTA: `https://docs.devcentr.org/issues-browser/`.
+* Docs workflow validates Antora build only (no Pages publish).

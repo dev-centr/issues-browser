@@ -1,0 +1,12 @@
+= 2026-08-08 — Index cache and backup
+
+== Summary
+
+Added a lightweight index cache as the default local store, with opt-in full backup archives for selected repos. Daemon and tray support ongoing monitor sync.
+
+== Details
+
+* Index SQLite under the issues catalogue (`index/index.sqlite`).
+* Backup archives under `archives/<host>/<owner>/<repo>/database.sqlite` when enabled.
+* CLI flags: `--backup`, `--index-only`, `--set-backup`, `--monitor-add`.
+* Daemon IPC on `:17365` (`/open-repo`, `/monitor/set-backup`).

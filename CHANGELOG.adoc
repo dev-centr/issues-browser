@@ -1,0 +1,21 @@
+= Changelog
+:toc:
+
+Timeline of Issues Browser functional changes. Detail pages live under `changelog-details/`.
+
+== 2026-08-08 — Index cache + opt-in full backup
+
+* Lightweight central index cache with opt-in full per-repo backup archives.
+* Monitor/daemon path for continuous sync (`issuesd` + tray).
+* See link:changelog-details/2026-08-08%20-%20index-cache-and-backup.adoc[Detailed changelog].
+
+== 2026-08-08 — Qt tray via dqt fork; repo-get forge profiles
+
+* Tray uses dqt git fork for `QSystemTrayIcon`; forge profiles via repo-get DUB package.
+* See link:changelog-details/2026-08-08%20-%20qt-tray-and-forge-profiles.adoc[Detailed changelog].
+
+== 2026-08 — Rename to Issues Browser + docs hub
+
+* Renamed from issue-tracker to issues-browser; Antora component wired to `https://docs.devcentr.org/issues-browser/`.
+* Stopped secondary GitHub Pages Antora publish (validation-only docs CI).
+* See link:changelog-details/2026-08%20-%20rename-and-docs-hub.adoc[Detailed changelog].

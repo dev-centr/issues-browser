@@ -1,0 +1,11 @@
+= 2026-08-08 — Qt tray and forge profiles
+
+== Summary
+
+Tray path moved onto a dqt git fork for system tray icons; forge profile loading uses the repo-get DUB package instead of vendored SDL copies.
+
+== Details
+
+* Qt tray via dqt fork / PR path documented for `QSystemTrayIcon`.
+* Stopped tracking SDL files copied from the repo-get package; keep `profiles/` copy.
+* Fixed `ForgeProfile` name clash with repo-get forge profiles.
