@@ -43,3 +43,6 @@ Thumbs.db
 installer/*.exe
 installer/*.msi
 installer/output/
+bootstrap.sdl
+forge-profiles.sdl
+vcs-profiles.sdl

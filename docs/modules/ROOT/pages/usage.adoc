@@ -40,8 +40,7 @@ IPC (localhost only): `GET /health`, `GET /status`, `GET /monitor`, `POST /monit
 
   issues-browser-tray --port 17365
 
-Windows system tray (Win32). Start `issuesd` first. Menu: status, sync now, open archives, quit.
-Qt settings UI can wrap the same IPC later; tray icon uses a native shim because `dqt` lacks `QSystemTrayIcon` today.
+Cross-platform system tray via Qt/`dqt` (`QSystemTrayIcon` from `dlang-supplemental/dqt`). Start `issuesd` first. Menu: status, sync now, open archives, quit.
 
 == GUI
 

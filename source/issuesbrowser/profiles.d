@@ -1,61 +1,67 @@
 module issuesbrowser.profiles;
 
-import std.file;
-import std.path;
-import std.string;
-import std.algorithm;
+import std.algorithm : canFind;
 import std.array;
-import std.conv;
-import std.regex;
-import sdlang;
+import std.string;
 import issuesbrowser.types;
-import issuesbrowser.paths;
+import rg = repoget.forge;
 
 private ForgeProfile[] gProfiles;
 private bool gLoaded;
 
-void loadForgeProfiles(string root = null) {
+private ForgeProfile toLocal(rg.ForgeProfile p)
+{
+	ForgeProfile outP;
+	outP.name = p.name;
+	outP.matchers = p.matchers.dup;
+	outP.cli = p.cli;
+	outP.listIssuesCmd = p.listIssuesCmd.dup;
+	outP.listPrsCmd = p.listPrsCmd.dup;
+	outP.graphql = p.graphql;
+	outP.minIntervalMs = p.minIntervalMs;
+	outP.on429BackoffS = p.on429BackoffS;
+	return outP;
+}
+
+void loadForgeProfiles(string root = null)
+{
 	gProfiles.length = 0;
 	gLoaded = true;
-	string[] candidates;
-	try {
-		candidates ~= buildPath(dirName(thisExePath()), "profiles", "forge-profiles.sdl");
-	} catch (Exception) {}
-	candidates ~= buildPath(getcwd(), "profiles", "forge-profiles.sdl");
-	candidates ~= buildPath(archiveRoot(root), "forge-profiles.sdl");
-	candidates ~= absolutePath(buildPath("profiles", "forge-profiles.sdl"));
-	foreach (c; candidates) {
-		if (exists(c)) {
-			parseForgeContent(readText(c));
-			break;
-		}
+
+	foreach (host; ["github.com", "gitlab.com"])
+	{
+		auto p = rg.getForge(host);
+		if (p.name.length && !gProfiles.canFind!(x => x.name == p.name))
+			gProfiles ~= toLocal(p);
 	}
+
 	if (gProfiles.length == 0)
 		gProfiles ~= defaultGitHub();
 }
 
-ForgeProfile[] allForgeProfiles() {
-	if (!gLoaded) loadForgeProfiles();
+ForgeProfile[] allForgeProfiles()
+{
+	if (!gLoaded)
+		loadForgeProfiles();
 	return gProfiles;
 }
 
-ForgeProfile resolveForge(string host) {
-	if (!gLoaded) loadForgeProfiles();
+ForgeProfile resolveForge(string host)
+{
+	if (!gLoaded)
+		loadForgeProfiles();
 	auto h = host.length ? host : "github.com";
-	foreach (p; gProfiles) {
-		foreach (m; p.matchers) {
-			try {
-				if (!matchFirst(h, regex(m)).empty)
-					return p;
-			} catch (Exception) {}
-		}
-	}
+	auto p = rg.getForge(h);
+	if (p.name.length)
+		return toLocal(p);
 	return defaultGitHub();
 }
 
-string[] interpolateCmd(string[] tmpl, string owner, string name, string host, string since = "") {
+string[] interpolateCmd(string[] tmpl, string owner, string name, string host, string since = "")
+{
 	string[] outArgs;
-	foreach (a; tmpl) {
+	foreach (a; tmpl)
+	{
 		outArgs ~= a
 			.replace("$OWNER", owner)
 			.replace("$NAME", name)
@@ -65,48 +71,8 @@ string[] interpolateCmd(string[] tmpl, string owner, string name, string host, s
 	return outArgs;
 }
 
-private void parseForgeContent(string content) {
-	Tag root = parseSource(content);
-	foreach (tag; root.tags) {
-		if (tag.name != "forge") continue;
-		ForgeProfile p;
-		p.name = tag.values[0].get!string;
-		foreach (child; tag.tags) {
-			string[] vals;
-			foreach (v; child.values) vals ~= v.get!string;
-			switch (child.name) {
-			case "matcher":
-				p.matchers = vals;
-				break;
-			case "cli":
-				if (vals.length) p.cli = vals[0];
-				break;
-			case "list-issues":
-				p.listIssuesCmd = vals;
-				break;
-			case "list-prs":
-				p.listPrsCmd = vals;
-				break;
-			case "graphql":
-				if (vals.length) p.graphql = vals[0] == "true" || child.values[0].get!bool;
-				break;
-			case "rate_limit":
-				foreach (rl; child.tags) {
-					if (rl.name == "min_interval_ms" && rl.values.length)
-						p.minIntervalMs = cast(int) rl.values[0].get!long;
-					else if (rl.name == "on_429_backoff_s" && rl.values.length)
-						p.on429BackoffS = cast(int) rl.values[0].get!long;
-				}
-				break;
-			default:
-				break;
-			}
-		}
-		gProfiles ~= p;
-	}
-}
-
-private ForgeProfile defaultGitHub() {
+private ForgeProfile defaultGitHub()
+{
 	ForgeProfile p;
 	p.name = "github";
 	p.matchers = ["github\\.com"];

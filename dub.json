@@ -9,13 +9,13 @@
 	"dependencies": {
 		"d2sqlite3": "~>1.0.0",
 		"stdx-allocator": "~>3.0.2",
-		"sdlang-d": "~>0.10.6"
+		"sdlang-d": "~>0.10.6",
+		"repo-get": "~>0.3.0"
 	},
 	"subConfigurations": {
 		"d2sqlite3": "all-included"
 	},
 	"copyFiles": [
-		"profiles/forge-profiles.sdl",
 		"help.sdl"
 	],
 	"configurations": [
@@ -92,9 +92,15 @@
 			"excludedSourceFiles": [
 				"source/app_gui.d",
 				"source/app_cli.d",
-				"source/app_daemon.d"
+				"source/app_daemon.d",
+				"source/tray/win_tray.d"
 			],
-			"libs-windows": ["user32", "shell32", "gdi32"],
+			"dependencies": {
+				"dqt:widgets": {
+					"repository": "git+https://github.com/dlang-supplemental/dqt.git",
+					"version": "297b81b2cb7e0e40dc0c7192252c4f150f735865"
+				}
+			},
 			"lflags-windows-x86_64": [
 				"/LIBPATH:$PACKAGE_DIR/vendor/sqlite/win64"
 			]
