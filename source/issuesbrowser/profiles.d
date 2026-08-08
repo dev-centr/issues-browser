@@ -3,7 +3,8 @@ module issuesbrowser.profiles;
 import std.algorithm : canFind;
 import std.array;
 import std.string;
-import issuesbrowser.types;
+// Selective import avoids clash with repoget.forge.ForgeProfile under some compilers.
+import issuesbrowser.types : ForgeProfile;
 import rg = repoget.forge;
 
 private ForgeProfile[] gProfiles;
