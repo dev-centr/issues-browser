@@ -31,12 +31,15 @@
 Central root (not inside each project clone):
 
 ----
-<archive-root>/archives/<host>/<owner>/<repo>/database.sqlite
+<archive-root>/index/index.sqlite                 # lightweight cross-repo index (default)
+<archive-root>/archives/<host>/<owner>/<repo>/database.sqlite  # opt-in full backup
 <archive-root>/archives/<host>/<owner>/<repo>/contents/   # reserved
-<archive-root>/monitor.sdl
+<archive-root>/monitor.sdl                        # backup=true|false per repo
+<archive-root>/pending-open.json                  # open-repo IPC/GUI handoff
 ----
 
-Legacy paths (`<repo>/.issues/database.sqlite` and `parent/.issues/<name>.sqlite`) migrate on sync.
+Legacy paths (`<repo>/.issues/database.sqlite` and `parent/.issues/<name>.sqlite`) migrate on backup sync.
+Existing archive DBs are treated as `backup=true` on upgrade.
 
 == Schema highlights
 

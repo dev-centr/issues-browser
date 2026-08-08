@@ -1,33 +1,33 @@
 command "issues-browser" {
     title "Issues Browser"
-    summary "Forge metadata backup: issues, PRs, discussions — offline archive, CLI, daemon, tray"
-    description "Automated backup of forge issues, pull requests, discussions, and comments into a central SQLite archive under AMDphreak/.issues/archives. Browse offline; monitor continuously via issuesd."
+    summary "Forge metadata index (default) + opt-in per-repo backup — CLI, GUI, daemon, tray"
+    description "Lightweight index cache by default; full issue/PR/discussion backup when enabled per repo. Browse offline; monitor via issuesd. Integrates with RepoDrive (POST /open-repo)."
     homepage "https://github.com/dev-centr/issues-browser"
     docs "https://docs.devcentr.org/issues-browser/"
     issues "https://github.com/dev-centr/issues-browser/issues"
 
     section "usage" {
         summary "Common commands"
-        content "issues-browser --sync <repo-path>\nissues-browser --list <owner/name-or-path>\nissues-browser --monitor add|remove|list <owner/name>\nissues-browser --find-dbs [root]\nissuesd --root <path>\nissues-browser-tray"
+        content "issues-browser --sync <repo-path>\nissues-browser --sync <repo> --backup --yes\nissues-browser --set-backup owner/name\nissues-browser --set-index-only owner/name\nissues-browser --monitor-add|--monitor-list\nissues-browser --open-repo owner/name\nissuesd --root <path>"
 
-        example "Sync a local clone (PRs on by default)" "issues-browser --sync ./myrepo --yes"
-        example "Exclude PRs" "issues-browser --sync ./myrepo --no-prs --yes"
-        example "Add monitored repo" "issues-browser --monitor add owner/name"
+        example "Index sync (default)" "issues-browser --sync ./myrepo"
+        example "Full backup sync" "issues-browser --sync ./myrepo --backup --yes"
+        example "Enable backup for monitored repo" "issues-browser --set-backup owner/name"
         example "Progressive help" "issues-browser ?"
     }
 
     section "backup" {
-        summary "What is archived"
-        content "Issues, pull requests (default), discussions, and comment threads. Stored at <archive-root>/archives/<host>/<owner>/<repo>/database.sqlite. Bodies stay in SQLite; contents/ is reserved for future blob offload."
+        summary "Index vs backup"
+        content "Index: <archive-root>/index/index.sqlite (stubs). Backup: archives/<host>/<owner>/<repo>/database.sqlite (bodies+comments). monitor.sdl backup true|false. Existing archives migrate to backup=true."
     }
 
     section "daemon" {
         summary "Continuous monitoring"
-        content "issuesd polls monitor.sdl and exposes localhost HTTP JSON on 127.0.0.1:17365 (/health /status /monitor /sync-now). Tray app talks to the daemon."
+        content "issuesd polls monitor.sdl; index for all enabled repos; full backup only when backup=true. IPC 127.0.0.1:17365 (/health /status /monitor /sync-now /open-repo /monitor/set-backup)."
     }
 
     section "prohelp" {
         summary "Help system"
-        content "help.sdl uses the OpenShellOrg ProHelp schema. Runtime intercept is issuesbrowser.prohelpcompat (sdlang); full openshellorg/prohelp can replace it when the toolchain builds that package. Try: issues-browser ?   or   issues-browser ? backup"
+        content "help.sdl uses the OpenShellOrg ProHelp schema. Try: issues-browser ?   or   issues-browser ? backup"
     }
 }

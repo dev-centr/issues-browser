@@ -31,6 +31,11 @@ MonitoredRepo[] loadMonitorList(string root = null) {
 				case "last_sync": m.lastSync = child.values[0].get!string; break;
 				case "last_error": m.lastError = child.values[0].get!string; break;
 				case "enabled": m.enabled = child.values[0].get!bool; break;
+				case "backup": m.backup = child.values[0].get!bool; break;
+				case "mode":
+					auto mode = child.values[0].get!string;
+					m.backup = (mode == "backup");
+					break;
 				default: break;
 				}
 			}
@@ -55,6 +60,7 @@ void saveMonitorList(MonitoredRepo[] list, string root = null) {
 		s ~= "    name \"" ~ escapeSdl(m.name) ~ "\"\n";
 		s ~= "    poll_interval_s " ~ to!string(m.pollIntervalSec) ~ "\n";
 		s ~= "    enabled " ~ (m.enabled ? "true" : "false") ~ "\n";
+		s ~= "    backup " ~ (m.backup ? "true" : "false") ~ "\n";
 		if (m.lastSync.length)
 			s ~= "    last_sync \"" ~ escapeSdl(m.lastSync) ~ "\"\n";
 		if (m.lastError.length)
@@ -64,7 +70,7 @@ void saveMonitorList(MonitoredRepo[] list, string root = null) {
 	std.file.write(path, s);
 }
 
-bool addMonitored(string remoteOrSlug, string root = null, int pollIntervalSec = 300) {
+bool addMonitored(string remoteOrSlug, string root = null, int pollIntervalSec = 300, bool backup = false) {
 	auto list = loadMonitorList(root);
 	string host, owner, name, remote;
 	if (!parseRemoteOrSlug(remoteOrSlug, host, owner, name, remote))
@@ -73,6 +79,7 @@ bool addMonitored(string remoteOrSlug, string root = null, int pollIntervalSec =
 		if (m.host == host && m.owner == owner && m.name == name) {
 			m.enabled = true;
 			m.pollIntervalSec = pollIntervalSec;
+			m.backup = backup;
 			saveMonitorList(list, root);
 			return true;
 		}
@@ -84,9 +91,64 @@ bool addMonitored(string remoteOrSlug, string root = null, int pollIntervalSec =
 	m.remote = remote;
 	m.pollIntervalSec = pollIntervalSec;
 	m.enabled = true;
+	m.backup = backup;
 	list ~= m;
 	saveMonitorList(list, root);
 	return true;
+}
+
+bool setBackupMode(string remoteOrSlug, bool backup, string root = null) {
+	auto list = loadMonitorList(root);
+	string host, owner, name, remote;
+	if (!parseRemoteOrSlug(remoteOrSlug, host, owner, name, remote))
+		return false;
+	foreach (ref m; list) {
+		if (m.host == host && m.owner == owner && m.name == name) {
+			m.backup = backup;
+			saveMonitorList(list, root);
+			return true;
+		}
+	}
+	// not monitored yet — add as enabled with requested backup flag
+	return addMonitored(remoteOrSlug, root, 300, backup);
+}
+
+/// Existing archive DBs are treated as backup-enabled so upgrades never silently downgrade.
+void migrateArchivesAsBackup(string root = null) {
+	auto list = loadMonitorList(root);
+	bool changed = false;
+	auto dbs = discoverIssueDatabases(archivesDir(root));
+	foreach (dbPath; dbs) {
+		// archives/<host>/<owner>/<repo>/database.sqlite
+		auto repoDir = dirName(dbPath);
+		auto name = baseName(repoDir);
+		auto owner = baseName(dirName(repoDir));
+		auto host = baseName(dirName(dirName(repoDir)));
+		bool found = false;
+		foreach (ref m; list) {
+			if (m.host == host && m.owner == owner && m.name == name) {
+				if (!m.backup) {
+					m.backup = true;
+					changed = true;
+				}
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			MonitoredRepo m;
+			m.host = host;
+			m.owner = owner;
+			m.name = name;
+			m.remote = "https://" ~ host ~ "/" ~ owner ~ "/" ~ name ~ ".git";
+			m.backup = true;
+			m.enabled = true;
+			list ~= m;
+			changed = true;
+		}
+	}
+	if (changed)
+		saveMonitorList(list, root);
 }
 
 bool removeMonitored(string remoteOrSlug, string root = null) {

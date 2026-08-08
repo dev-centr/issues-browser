@@ -8,3 +8,4 @@ public import issuesbrowser.monitor;
 public import issuesbrowser.sync;
 public import issuesbrowser.types;
 public import issuesbrowser.ipc;
+public import issuesbrowser.index;

@@ -5,17 +5,19 @@ ifndef::env-github[:icons: font]
 
 = Issues Browser
 
-Local **forge metadata backup** for issues, pull requests, and discussions. Archives into central SQLite under `AMDphreak/.issues/archives`; browse offline via GUI/CLI; monitor continuously with `issuesd` + tray.
+Local **forge metadata index** (default) and **opt-in per-repo backup** for issues, pull requests, and discussions. Browse offline via GUI/CLI; monitor continuously with `issuesd` + tray.
+
+Works with https://github.com/dev-centr/repo-drive[RepoDrive] (`POST /open-repo`, index/backup fallbacks).
 
 link:https://docs.devcentr.org/issues-browser/[Docs] ·
 link:https://github.com/dev-centr/issues-browser/issues[Issues]
 
 == Components
 
-* **Library** — sync engine, SDL forge profiles, SQLite schema, monitor store
-* **CLI** (`issues-browser`) — ProHelp (`openshellorg/prohelp`, PCDL) + sync/list/monitor
-* **GUI** (`issues-browser-gui`) — DlangUI browser
-* **Daemon** (`issuesd`) — incremental polling + localhost IPC `:17365`
+* **Library** — index + backup sync, SDL forge profiles, SQLite schema, monitor store
+* **CLI** (`issues-browser`) — ProHelp + sync/list/monitor (`--backup` / `--index-only`)
+* **GUI** (`issues-browser-gui`) — DlangUI browser with Cached vs Backed up
+* **Daemon** (`issuesd`) — polling + localhost IPC `:17365` (`/open-repo`, `/monitor/set-backup`)
 * **Tray** (`issues-browser-tray`) — Win32 tray client for the daemon
 
 == Quick start
@@ -23,13 +25,15 @@ link:https://github.com/dev-centr/issues-browser/issues[Issues]
 [source,bash]
 ----
 dub build --config=cli
-issues-browser --sync ./myrepo --yes
+issues-browser --sync ./myrepo
+issues-browser --sync ./myrepo --backup --yes
+issues-browser --set-backup owner/name
 issues-browser --monitor-add owner/name
 dub build --config=daemon && issuesd
-dub build --config=tray && issues-browser-tray
 ----
 
-Archives default to `$CODE_ROOT/github.com/AMDphreak/.issues/archives/<host>/<owner>/<repo>/database.sqlite`.
+Index: `$CODE_ROOT/github.com/AMDphreak/.issues/index/index.sqlite` +
+archives for backup-enabled repos under `archives/<host>/<owner>/<repo>/database.sqlite`.
 
 == License
 

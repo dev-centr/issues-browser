@@ -102,6 +102,32 @@ private string handleRequest(string req, string archiveRoot) {
 		auto ok = syncOneFromSlug(slug, archiveRoot);
 		return httpResponse(ok ? 200 : 500, ok ? `{"ok":true}` : `{"error":"sync failed"}`);
 	}
+	if (method == "POST" && path == "/open-repo") {
+		auto host = jsonField(body, "host");
+		auto owner = jsonField(body, "owner");
+		auto name = jsonField(body, "name");
+		if (owner.length == 0 || name.length == 0) {
+			auto slug = jsonField(body, "repo");
+			string remote;
+			if (!parseRemoteOrSlug(slug, host, owner, name, remote))
+				return httpResponse(400, `{"error":"host/owner/name or repo required"}`);
+		}
+		if (host.length == 0) host = "github.com";
+		auto ok = queueOpenRepo(host, owner, name, archiveRoot);
+		return httpResponse(ok ? 200 : 500, ok ? `{"ok":true}` : `{"error":"open failed"}`);
+	}
+	if (method == "POST" && path == "/monitor/set-backup") {
+		auto slug = jsonField(body, "repo");
+		auto backupStr = jsonField(body, "backup");
+		bool backup = backupStr == "true" || backupStr == "1" || backupStr == "yes";
+		try {
+			auto j = parseJSON(body);
+			if ("backup" in j && j["backup"].type == JSONType.true_) backup = true;
+			if ("backup" in j && j["backup"].type == JSONType.false_) backup = false;
+		} catch (Exception) {}
+		auto ok = setBackupMode(slug, backup, archiveRoot);
+		return httpResponse(ok ? 200 : 400, ok ? `{"ok":true}` : `{"error":"invalid repo"}`);
+	}
 	return httpResponse(404, `{"error":"not found"}`);
 }
 
@@ -136,6 +162,8 @@ private string monitorListJson(string root) {
 		o["remote"] = m.remote;
 		o["pollIntervalSec"] = m.pollIntervalSec;
 		o["enabled"] = m.enabled;
+		o["backup"] = m.backup;
+		o["mode"] = m.backup ? "backup" : "index";
 		o["lastSync"] = m.lastSync;
 		o["lastError"] = m.lastError;
 		arr ~= o;
@@ -181,6 +209,7 @@ bool syncMonitored(MonitoredRepo m, string archiveRoot) {
 	opts.includePrs = true;
 	opts.includeDiscussions = true;
 	opts.archiveRoot = archiveRoot;
+	opts.mode = m.backup ? RepoSyncMode.backup : RepoSyncMode.index;
 	try {
 		auto ok = syncRepoInfo(info, opts);
 		auto now = Clock.currTime.toISOExtString();
@@ -197,6 +226,34 @@ bool syncMonitored(MonitoredRepo m, string archiveRoot) {
 	} catch (Exception e) {
 		gState.lastError = e.msg;
 		updateMonitorStatus(m.host, m.owner, m.name, m.lastSync, e.msg, archiveRoot);
+		return false;
+	}
+}
+
+/// Write pending-open.json and try to launch the GUI focused on the repo.
+bool queueOpenRepo(string host, string owner, string name, string archiveRoot) {
+	import std.file;
+	import std.path;
+	import std.process;
+	try {
+		mkdirRecurse(issuesbrowser.paths.archiveRoot(archiveRoot));
+		JSONValue o;
+		o["host"] = host;
+		o["owner"] = owner;
+		o["name"] = name;
+		std.file.write(pendingOpenPath(archiveRoot), o.toString());
+		string[] bins = ["issues-browser-gui"];
+		version (Windows) bins = ["issues-browser-gui.exe"];
+		foreach (bin; bins) {
+			try {
+				spawnProcess([bin, "--open-repo", owner ~ "/" ~ name, "--host", host, "--root",
+					issuesbrowser.paths.archiveRoot(archiveRoot)]);
+				return true;
+			} catch (Exception) {}
+		}
+		return true; // pending file written even if GUI missing
+	} catch (Exception e) {
+		gState.lastError = e.msg;
 		return false;
 	}
 }

@@ -10,6 +10,12 @@ struct RepoInfo {
 	bool isFork;
 }
 
+/// Index = lightweight listings; Backup = full bodies/comments archive.
+enum RepoSyncMode {
+	index,
+	backup
+}
+
 /// Options controlling sync volume and confirmation.
 struct SyncOptions {
 	bool force;
@@ -18,6 +24,7 @@ struct SyncOptions {
 	int warnThreshold = 500;
 	int requireConfirmThreshold = 2000;
 	string archiveRoot;            /// override central .issues root
+	RepoSyncMode mode = RepoSyncMode.index; /// default: index cache only
 	bool delegate(string message) confirm;
 }
 
@@ -77,6 +84,7 @@ struct MonitoredRepo {
 	string lastSync;
 	string lastError;
 	bool enabled = true;
+	bool backup = false; /// false => index-only; true => index + full backup
 }
 
 struct ForgeProfile {

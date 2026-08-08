@@ -9,7 +9,10 @@ import std.algorithm;
 enum string dbFileName = "database.sqlite";
 enum string archivesDirName = "archives";
 enum string contentsDirName = "contents";
+enum string indexDirName = "index";
+enum string indexDbFileName = "index.sqlite";
 enum string monitorFileName = "monitor.sdl";
+enum string pendingOpenFileName = "pending-open.json";
 enum ushort defaultIpcPort = 17365;
 
 /// Resolve the central `.issues` root (submissions + archives).
@@ -39,6 +42,18 @@ string archiveRoot(string overrideRoot = null) {
 
 string archivesDir(string root = null) {
 	return buildPath(archiveRoot(root), archivesDirName);
+}
+
+string indexDir(string root = null) {
+	return buildPath(archiveRoot(root), indexDirName);
+}
+
+string indexDbPath(string root = null) {
+	return buildPath(indexDir(root), indexDbFileName);
+}
+
+string pendingOpenPath(string root = null) {
+	return buildPath(archiveRoot(root), pendingOpenFileName);
 }
 
 string monitorPath(string root = null) {

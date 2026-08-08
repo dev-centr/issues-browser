@@ -1,40 +1,40 @@
-= Forge metadata backup
+= Forge metadata index and backup
 
-Issues Browser is an **automated forge metadata backup** tool. It archives issues, pull requests, discussions, and comment threads so correspondence survives if a host, org, or upstream repo disappears.
+Issues Browser keeps a **lightweight metadata index** by default and an **opt-in per-repo full backup**.
 
-== What is backed up
+== Layers
 
-* Issues (bodies + comments)
-* Pull requests / merge requests (default on — they answer “what fixed this?”)
-* Discussions (when the forge supports them)
-* Lightweight issue↔PR links inferred from `#N` references in PR bodies
+| Layer | Default | Contents |
+| --- | --- | --- |
+| Index cache | Yes | Titles, states, urls, updated_at stubs in `index/index.sqlite` |
+| Backup | Opt-in per repo | Full bodies + comments in `archives/<host>/<owner>/<repo>/database.sqlite` |
 
-Bodies stay in SQLite for typical archives. Each archive directory also has a reserved `contents/` folder for a future blob offload if measured size requires it.
+== Controls
+
+* CLI: `--sync` (index), `--sync --backup` (full), `--set-backup owner/name`, `--set-index-only owner/name`, `--monitor-list`
+* GUI: **Sync selected (index)** vs **Backup selected**; list badges `[cached]` / `[backed up]`
+* Daemon/`monitor.sdl`: `backup true|false` (or `mode "backup"|"index"`) per repo
+* IPC: `POST /monitor/set-backup`, `POST /open-repo`
+
+Existing archives are migrated to `backup=true` on daemon start (`migrateArchivesAsBackup`) so upgrades never silently drop backup.
 
 == Where data lives
 
-Central root (default `$CODE_ROOT/github.com/AMDphreak/.issues`):
-
 ----
-archives/<host>/<owner>/<repo>/database.sqlite
-monitor.sdl          # daemon monitor list (local)
-submissions/         # separate: AI issue drafts (git-tracked)
+index/index.sqlite
+archives/<host>/<owner>/<repo>/database.sqlite   # backup-enabled repos only
+monitor.sdl
+pending-open.json   # RepoDrive / IPC open requests
 ----
 
 Override with `--root` or `ISSUES_BROWSER_ROOT`.
 
 == Continuous monitoring
 
-`issuesd` polls `monitor.sdl` and exposes localhost JSON IPC on `127.0.0.1:17365`.
-The tray app (`issues-browser-tray`) adds/removes monitors and triggers sync-now.
-Rate limits use SDL `rate_limit` (min interval + 429 backoff).
-
-== Guardrails
-
-Before a full download, GraphQL preflight counts issues/PRs/discussions and fork status.
-Large or busy-fork archives require confirmation (`--yes` for non-interactive).
+`issuesd` polls `monitor.sdl` and runs index sync for all enabled repos; full backup sync only when `backup` is true.
+Localhost JSON IPC: `127.0.0.1:17365`.
 
 == Providers
 
-Forge details live in SDLang profiles (`profiles/forge-profiles.sdl`), aligned with `dlang-supplemental/repo-get` forge profiles.
+Forge details live in SDLang profiles (`profiles/forge-profiles.sdl`).
 GitHub is fully implemented via `gh`; GitLab profile is stubbed for `glab`.

@@ -16,6 +16,7 @@ import issuesbrowser.database;
 import issuesbrowser.gitdiscover;
 import issuesbrowser.paths;
 import issuesbrowser.profiles;
+import issuesbrowser.index;
 
 private long gLastApiMs;
 
@@ -42,9 +43,16 @@ bool syncRepoInfo(RepoInfo info, SyncOptions opts = SyncOptions.init) {
 		return false;
 	}
 
+	// Always refresh lightweight index first
+	if (!syncIndexOnly(info, opts))
+		stderr.writeln("Index sync warning for ", info.owner, "/", info.name);
+
+	if (opts.mode != RepoSyncMode.backup)
+		return true;
+
 	auto pre = preflight(info);
 	if (!approveSync(pre, opts)) {
-		stderr.writeln("Sync cancelled for ", info.owner, "/", info.name);
+		stderr.writeln("Backup sync cancelled for ", info.owner, "/", info.name);
 		return false;
 	}
 
@@ -139,6 +147,78 @@ bool approveSync(SyncPreflight pre, SyncOptions opts) {
 		return false;
 	}
 	return opts.confirm(msg);
+}
+
+/// Lightweight index-only sync (titles/states/urls; no comment bodies).
+bool syncIndexOnly(RepoInfo info, SyncOptions opts = SyncOptions.init) {
+	if (info.host.length == 0) info.host = "github.com";
+	loadForgeProfiles(opts.archiveRoot);
+	auto forge = resolveForge(info.host);
+	if (forge.name != "github") {
+		stderr.writeln("Index sync currently complete for github; profile '", forge.name, "' is stubbed.");
+		return false;
+	}
+	auto idb = openIndexDb(opts.archiveRoot);
+	initIndexSchema(idb);
+	long repoId = upsertIndexRepo(idb, info.host, info.owner, info.name, info.remote, opts.mode == RepoSyncMode.backup);
+
+	auto issueJson = runCli(forge.cli, interpolateCmd(forge.listIssuesCmd, info.owner, info.name, info.host, null), forge.on429BackoffS);
+	if (issueJson.length) {
+		try {
+			auto arr = parseJSON(issueJson);
+			if (arr.type == JSONType.array) {
+				foreach (issue; arr.array) {
+					bool isPr = ("pull_request" in issue) !is null;
+					int num = issue["number"].integer.to!int;
+					string title = issue["title"].str;
+					string state = toUpper(issue["state"].str);
+					string url = jsonStr(issue, "html_url");
+					string updatedAt = jsonStr(issue, "updated_at");
+					upsertIssueStub(idb, repoId, num, title, state, url, updatedAt, isPr);
+				}
+			}
+		} catch (Exception e) {
+			stderr.writeln("Index issues parse: ", e.msg);
+		}
+	}
+
+	if (opts.includePrs) {
+		auto prJson = runCli(forge.cli, interpolateCmd(forge.listPrsCmd, info.owner, info.name, info.host, null), forge.on429BackoffS);
+		if (prJson.length) {
+			try {
+				auto arr = parseJSON(prJson);
+				if (arr.type == JSONType.array) {
+					foreach (pr; arr.array) {
+						int num = pr["number"].integer.to!int;
+						upsertPrStub(idb, repoId, num, pr["title"].str, toUpper(pr["state"].str),
+							jsonStr(pr, "html_url"), jsonStr(pr, "updated_at"));
+					}
+				}
+			} catch (Exception e) {
+				stderr.writeln("Index PRs parse: ", e.msg);
+			}
+		}
+	}
+
+	if (opts.includeDiscussions) {
+		// Minimal discussion stubs via GraphQL (numbers/titles/urls only)
+		string q = "query($owner:String!,$name:String!){repository(owner:$owner,name:$name){" ~
+			"discussions(first:50){nodes{number title url updatedAt}}}}";
+		auto raw = runCli("gh", ["api", "graphql", "-f", "query=" ~ q, "-F", "owner=" ~ info.owner, "-F", "name=" ~ info.name], 60);
+		if (raw.length) {
+			try {
+				auto root = parseJSON(raw);
+				auto nodes = root["data"]["repository"]["discussions"]["nodes"];
+				foreach (d; nodes.array) {
+					upsertDiscussionStub(idb, repoId, cast(int) d["number"].integer, d["title"].str,
+						d["url"].str, ("updatedAt" in d) ? d["updatedAt"].str : "");
+				}
+			} catch (Exception) {}
+		}
+	}
+
+	touchIndexMeta(idb, repoId);
+	return true;
 }
 
 private void syncIssuesAndComments(Database db, long repoId, RepoInfo info, ForgeProfile forge,
@@ -296,6 +376,15 @@ private void syncDiscussions(Database db, long repoId, RepoInfo info, ForgeProfi
 private string jsonStr(JSONValue obj, string key) {
 	if (key !in obj || obj[key].type == JSONType.null_) return "";
 	return obj[key].str;
+}
+
+private string toUpper(string s) {
+	string o;
+	foreach (c; s) {
+		if (c >= 'a' && c <= 'z') o ~= cast(char)(c - 32);
+		else o ~= c;
+	}
+	return o;
 }
 
 private string runCli(string cli, string[] args, int backoffS) {

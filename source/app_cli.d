@@ -17,6 +17,8 @@ import issuesbrowser.types;
 import issuesbrowser.paths;
 import issuesbrowser.monitor;
 import issuesbrowser.profiles;
+import issuesbrowser.index;
+import issuesbrowser.ipc;
 import d2sqlite3;
 
 import issuesbrowser.prohelpcompat;
@@ -34,11 +36,18 @@ void main(string[] args) {
 	string archiveRootOpt;
 	string monitorAdd;
 	string monitorRemove;
+	string setBackup;
+	string setIndexOnly;
+	string openRepo;
+	string openHost = "github.com";
 	bool monitorList;
 	bool help;
 	bool yes;
 	bool noDiscussions;
 	bool noPrs;
+	bool backupMode;
+	bool indexOnly;
+	bool migrateBackupFlags;
 
 	getopt(args,
 		"add-folder", &addFolder,
@@ -50,6 +59,13 @@ void main(string[] args) {
 		"monitor-add", &monitorAdd,
 		"monitor-remove", &monitorRemove,
 		"monitor-list", &monitorList,
+		"set-backup", &setBackup,
+		"set-index-only", &setIndexOnly,
+		"open-repo", &openRepo,
+		"host", &openHost,
+		"backup", &backupMode,
+		"index-only", &indexOnly,
+		"migrate-backup-flags", &migrateBackupFlags,
 		"yes|y", &yes,
 		"no-discussions", &noDiscussions,
 		"no-prs", &noPrs,
@@ -59,33 +75,80 @@ void main(string[] args) {
 	auto root = archiveRoot(archiveRootOpt);
 	loadForgeProfiles(root);
 
+	if (migrateBackupFlags) {
+		migrateArchivesAsBackup(root);
+		writeln("Migrated existing archives to backup=true in monitor.sdl");
+		return;
+	}
+
 	if (help || args.length == 1) {
-		writeln("issues-browser — forge metadata backup");
+		writeln("issues-browser — forge metadata index + opt-in backup");
 		writeln("  Archive root: ", root);
-		writeln("  --sync <path>           Sync repo(s) into archives/<host>/<owner>/<repo>/");
-		writeln("  --list <path|owner/name> List issues/PRs/discussions");
+		writeln("  --sync <path>           Sync (default: index cache; use --backup for full archive)");
+		writeln("  --backup                Full backup mode for --sync / --monitor-add");
+		writeln("  --index-only            Force index-only sync");
+		writeln("  --set-backup <slug>     Enable full backup for a monitored repo");
+		writeln("  --set-index-only <slug> Disable backup (keep index)");
+		writeln("  --open-repo <owner/name> Queue GUI open (writes pending-open.json)");
+		writeln("  --list <path|owner/name> List issues/PRs/discussions from backup DB");
 		writeln("  --search <query>        Search (with --list)");
-		writeln("  --monitor-add <owner/name>  Add monitored repo");
+		writeln("  --monitor-add <slug>    Add monitored repo (index by default)");
 		writeln("  --monitor-remove <slug> Remove monitored repo");
-		writeln("  --monitor-list          List monitored repos");
+		writeln("  --monitor-list          List monitored repos (shows mode)");
+		writeln("  --migrate-backup-flags  Mark existing archive DBs as backup-enabled");
 		writeln("  --find-dbs [path]       Find database.sqlite archives");
 		writeln("  --root <path>           Override archive root");
-		writeln("  --yes                   Approve large/fork syncs");
+		writeln("  --yes                   Approve large/fork backup syncs");
 		writeln("  --no-prs                Exclude pull requests");
 		writeln("  --no-discussions        Skip discussions");
 		writeln("  ?                       ProHelp progressive help");
 		return;
 	}
 
+	if (openRepo.length) {
+		string host = openHost, owner, name, remote;
+		if (!parseRemoteOrSlug(openRepo, host, owner, name, remote)) {
+			// allow owner/name with --host
+			auto slash = openRepo.indexOf("/");
+			if (slash > 0) {
+				owner = openRepo[0 .. slash];
+				name = openRepo[slash + 1 .. $];
+				host = openHost;
+			}
+		}
+		if (queueOpenRepo(host, owner, name, root))
+			writeln("Opened/queued ", host, "/", owner, "/", name);
+		else
+			writeln("Failed to open ", openRepo);
+		return;
+	}
+
+	if (setBackup.length) {
+		if (setBackupMode(setBackup, true, root))
+			writeln("Backup enabled for ", setBackup);
+		else
+			writeln("Failed: ", setBackup);
+		return;
+	}
+	if (setIndexOnly.length) {
+		if (setBackupMode(setIndexOnly, false, root))
+			writeln("Index-only for ", setIndexOnly);
+		else
+			writeln("Failed: ", setIndexOnly);
+		return;
+	}
+
 	if (monitorList) {
 		foreach (m; loadMonitorList(root))
-			writeln((m.enabled ? "[on] " : "[off] "), m.host, "/", m.owner, "/", m.name,
+			writeln((m.enabled ? "[on] " : "[off] "),
+				(m.backup ? "[backup] " : "[index] "),
+				m.host, "/", m.owner, "/", m.name,
 				" interval=", m.pollIntervalSec, "s");
 		return;
 	}
 	if (monitorAdd.length) {
-		if (addMonitored(monitorAdd, root))
-			writeln("Monitoring ", monitorAdd);
+		if (addMonitored(monitorAdd, root, 300, backupMode && !indexOnly))
+			writeln("Monitoring ", monitorAdd, backupMode && !indexOnly ? " (backup)" : " (index)");
 		else
 			writeln("Failed to parse repo: ", monitorAdd);
 		return;
@@ -120,6 +183,7 @@ void main(string[] args) {
 		opts.includeDiscussions = !noDiscussions;
 		opts.includePrs = !noPrs;
 		opts.archiveRoot = root;
+		opts.mode = (backupMode && !indexOnly) ? RepoSyncMode.backup : RepoSyncMode.index;
 		opts.confirm = (string msg) { return cliConfirm(msg); };
 
 		if (exists(syncPath) && isDir(syncPath)) {
@@ -127,10 +191,13 @@ void main(string[] args) {
 			if (repos.length == 0) {
 				auto gitPath = buildPath(syncPath, ".git");
 				if (exists(gitPath)) {
-					writeln("Syncing ", syncPath, " ...");
+					writeln("Syncing ", syncPath, " (", opts.mode == RepoSyncMode.backup ? "backup" : "index", ") ...");
 					if (syncRepo(syncPath, opts)) {
 						RepoInfo info; info.path = syncPath; getRemoteAndName(syncPath, info);
-						writeln("Done. DB: ", databasePath(info.host, info.owner, info.name, root));
+						if (opts.mode == RepoSyncMode.backup)
+							writeln("Done. DB: ", databasePath(info.host, info.owner, info.name, root));
+						else
+							writeln("Done. Index: ", indexDbPath(root));
 					}
 				} else
 					writeln("No git repos found.");
@@ -147,9 +214,13 @@ void main(string[] args) {
 			string remote;
 			if (parseRemoteOrSlug(syncPath, info.host, info.owner, info.name, remote)) {
 				info.remote = remote;
-				writeln("Syncing ", info.owner, "/", info.name, " ...");
-				if (syncRepoInfo(info, opts))
-					writeln("Done. DB: ", databasePath(info.host, info.owner, info.name, root));
+				writeln("Syncing ", info.owner, "/", info.name, " (", opts.mode == RepoSyncMode.backup ? "backup" : "index", ") ...");
+				if (syncRepoInfo(info, opts)) {
+					if (opts.mode == RepoSyncMode.backup)
+						writeln("Done. DB: ", databasePath(info.host, info.owner, info.name, root));
+					else
+						writeln("Done. Index: ", indexDbPath(root));
+				}
 			} else
 				writeln("Invalid path/slug: ", syncPath);
 		}

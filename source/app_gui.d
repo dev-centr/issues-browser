@@ -11,6 +11,8 @@ import issuesbrowser.sync;
 import issuesbrowser.database;
 import issuesbrowser.types;
 import issuesbrowser.paths;
+import issuesbrowser.index;
+import issuesbrowser.monitor;
 import d2sqlite3;
 
 mixin APP_ENTRY_POINT;
@@ -18,28 +20,42 @@ mixin APP_ENTRY_POINT;
 extern (C) int UIAppMain(string[] args) {
 	FontManager.fontGamma = 0.8;
 	FontManager.hintingMode = HintingMode.Normal;
+
+	string openRepoSlug;
+	string openHost = "github.com";
+	string archiveRootOpt;
+	import std.getopt;
+	getopt(args,
+		"open-repo", &openRepoSlug,
+		"host", &openHost,
+		"root", &archiveRootOpt
+	);
+
 	Window window = Platform.instance.createWindow("Issues Browser"d, null, WindowFlag.Resizable, 900, 600);
-	window.mainWidget = new IssuesBrowserFrame();
+	auto frame = new IssuesBrowserFrame(openRepoSlug, openHost, archiveRootOpt);
+	window.mainWidget = frame;
 	window.show();
 	return Platform.instance.enterMessageLoop();
 }
 
 class IssuesBrowserFrame : Widget {
-	this() {
+	this(string openRepoSlug = null, string openHost = "github.com", string archiveRootOpt = null) {
 		HorizontalLayout topBar = new HorizontalLayout();
 		LineEdit folderEdit = new LineEdit();
 		folderEdit.placeholder = "Path to folder of git repos";
 		folderEdit.preferredWidth = 400;
 		Button addBtn = new Button("Add folder");
-		Button syncBtn = new Button("Sync selected");
+		Button syncBtn = new Button("Sync selected (index)");
+		Button backupBtn = new Button("Backup selected");
 		Button refreshBtn = new Button("Refresh list");
 		topBar.addChild(folderEdit);
 		topBar.addChild(addBtn);
 		topBar.addChild(syncBtn);
+		topBar.addChild(backupBtn);
 		topBar.addChild(refreshBtn);
 
 		ListView repoList = new ListView();
-		repoList.preferredWidth = 220;
+		repoList.preferredWidth = 260;
 		ListView issueList = new ListView();
 		issueList.preferredWidth = 350;
 		TextEdit detailEdit = new TextEdit();
@@ -60,6 +76,7 @@ class IssuesBrowserFrame : Widget {
 		string currentDbPath;
 		long[] itemIds;
 		string[] itemKinds; // "issue" | "pr" | "discussion"
+		auto root = archiveRoot(archiveRootOpt);
 
 		void refreshRepos() {
 			repoList.items.clear();
@@ -70,6 +87,10 @@ class IssuesBrowserFrame : Widget {
 			foreach (r; repos) {
 				string label = r.name;
 				if (r.owner.length > 0) label = r.owner ~ "/" ~ label;
+				auto host = r.host.length ? r.host : "github.com";
+				auto mode = repoModeLabel(host, r.owner, r.name, root);
+				if (mode == "backup") label ~= " [backed up]";
+				else if (mode == "index") label ~= " [cached]";
 				repoList.items ~= label;
 			}
 			repoList.updateItems();
@@ -102,6 +123,23 @@ class IssuesBrowserFrame : Widget {
 			issueList.updateItems();
 		}
 
+		void openRepoBySlug(string slug, string host) {
+			string owner, name, remote, h = host;
+			if (!parseRemoteOrSlug(slug, h, owner, name, remote) && slug.canFind("/")) {
+				auto slash = slug.indexOf("/");
+				owner = slug[0 .. slash];
+				name = slug[slash + 1 .. $];
+				h = host.length ? host : "github.com";
+			}
+			if (owner.length == 0) return;
+			currentDbPath = databasePath(h, owner, name, root);
+			detailEdit.text = "Opened " ~ h ~ "/" ~ owner ~ "/" ~ name ~
+				"\nMode: " ~ repoModeLabel(h, owner, name, root) ~
+				"\nDB: " ~ currentDbPath;
+			if (exists(currentDbPath))
+				refreshIssues();
+		}
+
 		addBtn.onClick = { refreshRepos(); };
 
 		repoList.onItemClick = {
@@ -109,17 +147,19 @@ class IssuesBrowserFrame : Widget {
 			if (idx < 0 || idx >= repos.length) return;
 			auto r = repos[idx];
 			auto host = r.host.length ? r.host : "github.com";
-			migrateLegacyDbIfNeeded(host, r.owner, r.name, r.path);
-			currentDbPath = databasePath(host, r.owner, r.name);
+			migrateLegacyDbIfNeeded(host, r.owner, r.name, r.path, root);
+			currentDbPath = databasePath(host, r.owner, r.name, root);
 			refreshIssues();
 		};
 
-		syncBtn.onClick = {
+		void doSync(RepoSyncMode mode) {
 			int idx = repoList.selectedIndex;
 			if (idx < 0 || idx >= repos.length) return;
 			auto r = repos[idx];
 			SyncOptions opts;
 			opts.includePrs = true;
+			opts.archiveRoot = root;
+			opts.mode = mode;
 			opts.confirm = (string message) {
 				detailEdit.text = "SYNC CONFIRMATION\n\n" ~ message;
 				auto w = this.window;
@@ -132,10 +172,16 @@ class IssuesBrowserFrame : Widget {
 			};
 			if (syncRepo(r.path, opts)) {
 				auto host = r.host.length ? r.host : "github.com";
-				currentDbPath = databasePath(host, r.owner, r.name);
+				if (mode == RepoSyncMode.backup)
+					setBackupMode(r.owner ~ "/" ~ r.name, true, root);
+				currentDbPath = databasePath(host, r.owner, r.name, root);
+				refreshRepos();
 				refreshIssues();
 			}
-		};
+		}
+
+		syncBtn.onClick = { doSync(RepoSyncMode.index); };
+		backupBtn.onClick = { doSync(RepoSyncMode.backup); };
 
 		refreshBtn.onClick = {
 			refreshRepos();
@@ -194,5 +240,8 @@ class IssuesBrowserFrame : Widget {
 			}
 			detailEdit.text = text;
 		};
+
+		if (openRepoSlug.length)
+			openRepoBySlug(openRepoSlug, openHost);
 	}
 }

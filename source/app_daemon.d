@@ -23,6 +23,7 @@ void main(string[] args) {
 	);
 	auto archiveRootPath = archiveRoot(root);
 	loadForgeProfiles(archiveRootPath);
+	migrateArchivesAsBackup(archiveRootPath);
 	stderr.writeln("issuesd archive root: ", archiveRootPath);
 
 	if (once) {
