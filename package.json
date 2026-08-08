@@ -1,5 +1,5 @@
 {
-  "name": "issue-tracker-docs",
+  "name": "issues-browser-docs",
   "private": true,
   "scripts": {
     "build": "antora antora-playbook.yml --to-dir public",

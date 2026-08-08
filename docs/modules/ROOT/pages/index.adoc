@@ -1,24 +1,33 @@
-= Issue Tracker
+= Issues Browser
 
-Issue Tracker is a local GitHub issues and comments browser. It syncs issues and their comment threads into a SQLite database stored in a `.issues` folder next to your repos, so you can browse and search them like a local copy of the GitHub issues tracker.
+Issues Browser is a local forge **issues and discussions** archive/browser (formerly _issue-tracker_).
+It syncs issue threads and GitHub Discussions into a SQLite database inside each repo so you can browse and search offline — useful if a remote is deleted, attacked, or temporarily unavailable.
 
 == Features
 
 * Recursive git discovery: add a folder and the app finds all git repos (any directory containing `.git`).
-* Per-repo SQLite: each repo gets `.issues/<reponame>.sqlite` next to the repo folder.
-* GUI (DlangUI): browse repos, list issues, view body and comments, search, trigger sync.
-* CLI: same sync and query from the command line.
+* Per-repo archive: each repo stores data at `<repo>/.issues/database.sqlite` (gitignored by the sync step).
+* Discussions included by default (GitHub GraphQL); pull requests excluded unless requested.
+* Large-repo / fork guardrails: warn and require explicit approval before high-volume syncs.
+* GUI (DlangUI) and CLI for discover, sync, list, and search.
 * Library: use the core sync and database API from other D code.
 
 == Requirements
 
-* **gh** CLI (GitHub) must be installed and authenticated.
+* **gh** CLI (GitHub) installed and authenticated for sync.
 * SQLite: see xref:installation.adoc[Installation] for platform notes.
 
 == Quick start
 
 . Run the GUI or CLI and add a folder that contains git repos.
-. Sync: the app uses `gh api` to fetch issues and comments into `.issues/<reponame>.sqlite`.
+. Sync: the app fetches issues (and discussions) into `<repo>/.issues/database.sqlite`, and ensures `.issues/` is in that repo's `.gitignore`.
 . Browse and search in the GUI or with the CLI.
 
 See xref:usage.adoc[Usage] for CLI examples and GUI workflow.
+
+== Storage and naming
+
+The on-disk marker is the file `database.sqlite` under `.issues/`, not a username-level submissions tree.
+Recursive discovery looks for `**/.issues/database.sqlite` so it does not collide with a user repo named `.issue-submissions` (issue draft/screenshot archive).
+
+Bodies and comments live in SQLite. For typical personal/org repos this is fine; the real risk is **API sync volume** on huge upstreams/forks — hence the confirmation guardrails, not a separate content filesystem.

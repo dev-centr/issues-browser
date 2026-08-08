@@ -1,7 +1,7 @@
 site:
-  title: Issue Tracker
-  url: https://dev-centr.github.io/issue-tracker
-  start_page: issue-tracker::index.adoc
+  title: Issues Browser
+  url: https://docs.devcentr.org/issues-browser
+  start_page: issues-browser::index.adoc
 content:
   sources:
     - url: .

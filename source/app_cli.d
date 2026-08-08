@@ -1,5 +1,5 @@
 #!/usr/bin/env rdmd
-/** CLI for issue-tracker: discover repos, sync issues/comments, list and search. */
+/** CLI for issues-browser: discover repos/archives, sync issues+discussions, list and search. */
 module app_cli;
 
 import std.stdio;
@@ -9,10 +9,7 @@ import std.file;
 import std.string;
 import std.algorithm;
 import std.array;
-import issuetracker.gitdiscover;
-import issuetracker.sync;
-import issuetracker.database;
-import issuetracker.types;
+import issuesbrowser;
 import d2sqlite3;
 
 void main(string[] args) {
@@ -20,6 +17,10 @@ void main(string[] args) {
 	string listRepos;
 	string searchQuery;
 	string syncPath;
+	string findDbPath;
+	bool force;
+	bool noDiscussions;
+	bool includePrs;
 	bool help;
 
 	getopt(args,
@@ -27,15 +28,23 @@ void main(string[] args) {
 		"list", &listRepos,
 		"search", &searchQuery,
 		"sync", &syncPath,
-		"help", &help
+		"find-db", &findDbPath,
+		"yes|y", &force,
+		"no-discussions", &noDiscussions,
+		"include-prs", &includePrs,
+		"help|h", &help
 	);
 
 	if (help || args.length == 1) {
-		writeln("issue-tracker CLI");
-		writeln("  --add-folder <path>   Discover repos and show list");
-		writeln("  --sync <path>         Sync repo(s): path to repo or parent folder");
-		writeln("  --list <path|owner/name>  List issues from DB");
-		writeln("  --search <query>      Search issues (requires --list context)");
+		writeln("issues-browser CLI");
+		writeln("  --add-folder <path>     Discover git repos under path");
+		writeln("  --find-db <path>        Find **/\\.issues/database.sqlite under path");
+		writeln("  --sync <path>           Sync repo(s): path to repo or parent folder");
+		writeln("  --yes / -y              Allow large or fork syncs without prompt");
+		writeln("  --no-discussions        Skip GitHub Discussions");
+		writeln("  --include-prs           Include pull requests from issues API");
+		writeln("  --list <path>           List issues from <repo>/.issues/database.sqlite");
+		writeln("  --search <query>        Search issues (with --list)");
 		return;
 	}
 
@@ -43,55 +52,62 @@ void main(string[] args) {
 		auto repos = discoverRepos(addFolder);
 		writeln("Discovered ", repos.length, " repo(s):");
 		foreach (r; repos)
-			writeln("  ", r.path, "  ", r.owner, "/", r.name);
+			writeln("  ", r.path, "  ", r.host.length ? r.host ~ "/" : "", r.owner, "/", r.name);
+		return;
+	}
+
+	if (findDbPath.length > 0) {
+		auto dbs = discoverDatabases(findDbPath);
+		writeln("Found ", dbs.length, " archive(s):");
+		foreach (p; dbs) writeln("  ", p);
 		return;
 	}
 
 	if (syncPath.length > 0) {
-		if (exists(syncPath) && isDir(syncPath)) {
-			auto repos = discoverRepos(syncPath);
-			if (repos.length == 0) {
-				// Single repo?
-				auto gitPath = buildPath(syncPath, ".git");
-				if (exists(gitPath)) {
-					RepoInfo info;
-					info.path = syncPath;
-					getRemoteAndName(syncPath, info);
-					string parentDir = dirName(syncPath);
-					string rname = info.name.length > 0 ? info.name : baseName(syncPath);
-					writeln("Syncing ", rname, " ...");
-					syncRepo(syncPath, parentDir, rname);
-					writeln("Done.");
-				} else
-					writeln("No git repos found.");
+		SyncOptions opt;
+		opt.force = force;
+		opt.includeDiscussions = !noDiscussions;
+		opt.includePrs = includePrs;
+
+		if (!(exists(syncPath) && isDir(syncPath))) {
+			writeln("Path not found: ", syncPath);
+			return;
+		}
+		auto repos = discoverRepos(syncPath);
+		if (repos.length == 0) {
+			auto gitPath = buildPath(syncPath, ".git");
+			if (exists(gitPath)) {
+				RepoInfo info;
+				info.path = syncPath;
+				getRemoteAndName(syncPath, info);
+				repos ~= info;
 			} else {
-				foreach (r; repos) {
-					string parentDir = dirName(r.path);
-					writeln("Syncing ", r.name, " ...");
-					syncRepo(r.path, parentDir, r.name);
-				}
-				writeln("Done.");
+				writeln("No git repos found.");
+				return;
 			}
 		}
+		foreach (r; repos) {
+			writeln("Syncing ", r.owner, "/", r.name, " ...");
+			auto res = syncRepo(r.path, opt);
+			writeln(res.message);
+			if (res.skipped && !force) {
+				stderr.writeln("Hint: pass --yes to confirm large/fork syncs.");
+			}
+		}
+		writeln("Done.");
 		return;
 	}
 
 	if (listRepos.length > 0) {
-		string parentDir, repoName;
-		if (canFind(listRepos, "/") && !exists(listRepos)) {
-			auto parts = split(listRepos, "/");
-			if (parts.length >= 2) {
-				repoName = parts[1];
-				parentDir = "."; // current dir .issues
-			}
+		string dbPath;
+		if (exists(listRepos) && isDir(listRepos)) {
+			dbPath = databasePath(listRepos);
+		} else if (exists(listRepos) && isFile(listRepos)) {
+			dbPath = listRepos;
 		} else {
-			parentDir = dirName(listRepos);
-			RepoInfo info;
-			info.path = listRepos;
-			getRemoteAndName(listRepos, info);
-			repoName = info.name.length > 0 ? info.name : baseName(listRepos);
+			writeln("Path not found: ", listRepos);
+			return;
 		}
-		auto dbPath = buildPath(parentDir, ".issues", repoName ~ ".sqlite");
 		if (!exists(dbPath)) {
 			writeln("No DB at ", dbPath, ". Run --sync first.");
 			return;
@@ -100,14 +116,24 @@ void main(string[] args) {
 		string sql = "SELECT number, title, state FROM issues ORDER BY number DESC";
 		if (searchQuery.length > 0) {
 			string q = searchQuery.replace("'", "''");
-			sql = "SELECT number, title, state FROM issues WHERE (title LIKE '%" ~ q ~ "%' OR body LIKE '%" ~ q ~ "%') ORDER BY number DESC";
+			sql = "SELECT number, title, state FROM issues WHERE (title LIKE '%" ~ q ~
+				"%' OR body LIKE '%" ~ q ~ "%') ORDER BY number DESC";
 		}
+		writeln("Issues:");
 		foreach (row; db.execute(sql))
 			writeln("#", row.peek!int(0), " ", row.peek!string(1), " [", row.peek!string(2), "]");
+		writeln("Discussions:");
+		string dsql = "SELECT number, title, category FROM discussions ORDER BY number DESC";
+		if (searchQuery.length > 0) {
+			string q = searchQuery.replace("'", "''");
+			dsql = "SELECT number, title, category FROM discussions WHERE (title LIKE '%" ~ q ~
+				"%' OR body LIKE '%" ~ q ~ "%') ORDER BY number DESC";
+		}
+		foreach (row; db.execute(dsql))
+			writeln("D#", row.peek!int(0), " ", row.peek!string(1), " [", row.peek!string(2), "]");
 		return;
 	}
 
-	if (searchQuery.length > 0 && listRepos.length == 0) {
+	if (searchQuery.length > 0)
 		writeln("Use --list <repo> with --search <query>.");
-	}
 }

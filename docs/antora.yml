@@ -1,5 +1,5 @@
-name: issue-tracker
-title: Issue Tracker
+name: issues-browser
+title: Issues Browser
 version: master
 start_page: ROOT:index.adoc
 nav:

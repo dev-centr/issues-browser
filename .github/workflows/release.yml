@@ -16,14 +16,14 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         include:
           - os: ubuntu-latest
-            artifact: issue-tracker
-            asset: issue-tracker-linux-amd64
+            artifact: issues-browser
+            asset: issues-browser-linux-amd64
           - os: windows-latest
-            artifact: issue-tracker.exe
-            asset: issue-tracker-windows-amd64.exe
+            artifact: issues-browser.exe
+            asset: issues-browser-windows-amd64.exe
           - os: macos-latest
-            artifact: issue-tracker
-            asset: issue-tracker-macos-amd64
+            artifact: issues-browser
+            asset: issues-browser-macos-amd64
     steps:
       - uses: actions/checkout@v4
       - name: Install D
@@ -36,9 +36,9 @@ jobs:
         shell: bash
         run: |
           if [ "${{ runner.os }}" = "Windows" ]; then
-            mv issue-tracker.exe ${{ matrix.asset }}
+            mv issues-browser.exe ${{ matrix.asset }}
           else
-            mv issue-tracker ${{ matrix.asset }}
+            mv issues-browser ${{ matrix.asset }}
           fi
       - name: Upload to release
         uses: softprops/action-gh-release@v1

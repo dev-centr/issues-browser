@@ -2,36 +2,53 @@
 
 == GUI
 
-. Start the application (`dub run --config=application` or the installed executable).
-. Enter a path to a folder that contains git repos (e.g. `Z:\code\github.com\dev-centr`) in the text field.
-. Click *Add folder* to discover repos; they appear in the left list.
-. Select a repo and click *Sync selected* to fetch issues and comments into `.issues/<reponame>.sqlite`.
-. Click an issue in the middle list to view its body and comment thread in the detail pane.
-. Use *Refresh list* after adding a folder or syncing.
+. Start the application (`dub run --config=application` or the installed `issues-browser` executable).
+. Enter a path to a folder that contains git repos (e.g. your code root) in the text field.
+. Click *Add folder* to discover repos; they appear in the left list (● marks an existing local archive).
+. Select a repo and click *Sync selected* to fetch issues and discussions into `<repo>/.issues/database.sqlite`.
+. For large repos or busy forks, check *Allow large sync* first (see Guardrails).
+. Click an issue or discussion in the middle list to view body and comments.
 
 == CLI
 
 *Discover repos:*
 
-  issue-tracker --add-folder /path/to/parent/folder
+  issues-browser --add-folder /path/to/parent/folder
 
-*Sync one repo (path to repo) or all repos in a folder:*
+*Find existing archives:*
 
-  issue-tracker --sync /path/to/repo
-  issue-tracker --sync /path/to/folder/containing/repos
+  issues-browser --find-db /path/to/parent/folder
 
-*List issues (path to repo or path containing `.issues/<reponame>.sqlite`):*
+*Sync one repo or all repos under a folder:*
 
-  issue-tracker --list /path/to/repo
+  issues-browser --sync /path/to/repo
+  issues-browser --sync /path/to/folder/containing/repos
+  issues-browser --sync /path/to/repo --yes
+  issues-browser --sync /path/to/repo --no-discussions
+  issues-browser --sync /path/to/repo --include-prs
 
-*Search issues (title/body):*
+*List / search:*
 
-  issue-tracker --list /path/to/repo --search "antora"
-
-*Help:*
-
-  issue-tracker --help
+  issues-browser --list /path/to/repo
+  issues-browser --list /path/to/repo --search "antora"
 
 == Where data is stored
 
-For a repo at `parent/reponame`, the SQLite file is at `parent/.issues/reponame.sqlite`. No sharding is used; one file per repo.
+For a repo at `parent/reponame`, the SQLite file is at:
+
+  parent/reponame/.issues/database.sqlite
+
+Sync also appends a commented `.issues/` entry to that repo's `.gitignore` if missing.
+
+Legacy layout (`parent/.issues/<reponame>.sqlite` from the old issue-tracker) is no longer used; re-sync to create the new path.
+
+== Guardrails
+
+Before downloading, sync runs a GraphQL preflight for issue count, discussion count, and fork status.
+
+* **Warn** when total items ≥ 500, or when the repo is a fork.
+* **Require confirmation** when total items ≥ 2000, or when a **fork** has ≥ 500 issues.
+* CLI: pass `--yes` / `-y` to approve.
+* GUI: check *Allow large sync*.
+
+This avoids accidentally mirroring tens of thousands of issues from a high-activity upstream via a local fork.

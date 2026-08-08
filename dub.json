@@ -1,11 +1,11 @@
 {
-	"name": "issue-tracker",
-	"description": "Local GitHub issues and comments browser. Syncs issues into SQLite, browse and search with GUI or CLI.",
+	"name": "issues-browser",
+	"description": "Local forge issues and discussions browser. Syncs into per-repo SQLite for offline archive and browse.",
 	"authors": ["Dev-Centr"],
 	"license": "MIT",
-	"copyright": "Copyright © 2025, Dev-Centr",
-	"homepage": "https://github.com/dev-centr/issue-tracker",
-	"documentationURL": "https://dev-centr.github.io/issue-tracker/",
+	"copyright": "Copyright © 2025–2026, Dev-Centr",
+	"homepage": "https://github.com/dev-centr/issues-browser",
+	"documentationURL": "https://docs.devcentr.org/issues-browser/",
 	"dependencies": {
 		"d2sqlite3": "~>1.0.0",
 		"stdx-allocator": "~>3.0.2"
@@ -17,6 +17,7 @@
 		{
 			"name": "application",
 			"targetType": "executable",
+			"targetName": "issues-browser",
 			"mainSourceFile": "source/app_gui.d",
 			"dependencies": {
 				"dlangui": "~>0.10.8"
@@ -30,6 +31,7 @@
 		{
 			"name": "cli",
 			"targetType": "executable",
+			"targetName": "issues-browser",
 			"mainSourceFile": "source/app_cli.d",
 			"subConfigurations": {
 				"d2sqlite3": "all-included"

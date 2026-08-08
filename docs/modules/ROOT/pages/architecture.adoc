@@ -2,30 +2,37 @@
 
 == Components
 
-* **issuetracker (library)**: Core types, git discovery, SQLite schema, and GitHub sync.
-* **application (GUI)**: DlangUI app; repo list, issue list, detail view, sync trigger.
-* **cli**: Command-line interface using the same library for sync, list, and search.
+* **issuesbrowser (library)**: Types, git discovery, gitignore helper, SQLite schema, GitHub sync.
+* **application (GUI)**: DlangUI app; repo list, issue/discussion list, detail view, sync trigger.
+* **cli**: Command-line interface using the same library.
 
 == Git discovery
 
-Recursive walk of the given folder: any directory that contains a `.git` (file or directory) is treated as a repo. Remote URL and owner/name are read from `.git/config` (e.g. `https://github.com/owner/repo.git` or `git@github.com:owner/repo.git`).
+Recursive walk of the given folder: any directory that contains a `.git` (file or directory) is treated as a repo.
+Remote URL is parsed for `host`, `owner`, and `name` (GitHub and GitLab URL shapes).
+Archive discovery walks for `**/.issues/database.sqlite`.
 
 == Database schema
 
-* `repos`: path, remote, owner, name, updated_at.
-* `issues`: repo_id, number, title, state, body, url, created_at, closed_at, author, pr_accepted, state_reason.
-* `comments`: issue_id, body, author, created_at.
-* `sync_meta`: repo_id, last_sync.
+Stored at `<repo>/.issues/database.sqlite`:
 
-One SQLite file per repo: `.issues/<reponame>.sqlite` next to the repo folder.
+* `repos`: path, remote, host, owner, name, updated_at
+* `issues`: repo_id, number, title, state, body, url, created_at, closed_at, author, pr_accepted, state_reason
+* `comments`: issue_id, body, author, created_at
+* `discussions`: repo_id, number, title, body, url, category, created_at, author
+* `discussion_comments`: discussion_id, body, author, created_at
+* `sync_meta`: repo_id, last_sync
+
+Bodies remain in SQLite. Volume risk is addressed by sync guardrails, not by splitting content to the filesystem.
 
 == Sync process
 
-Sync uses the `gh` CLI:
+. GraphQL preflight: issue count, discussion count, `isFork` / parent.
+. Guardrail check (warn / require `--yes` or GUI allow-large).
+. Ensure `.issues/` is listed in the repo `.gitignore`.
+. REST: `gh api repos/owner/repo/issues --paginate --state all` (skip PRs unless `--include-prs`).
+. Per issue: timeline (closed reason) + comments.
+. GraphQL: paginated discussions + comments.
+. Upsert into SQLite via the database module.
 
-. `gh api repos/owner/repo/issues --paginate --state all` for issue list.
-. For each issue: `gh api repos/owner/repo/issues/<num>/timeline` to determine pr_accepted and state_reason.
-. `gh api repos/owner/repo/issues/<num>/comments` for the comment thread.
-. Data is written to the repo's SQLite file via the database module.
-
-Background sync in the GUI runs the same sync logic when the user clicks *Sync selected*; a future version may add a timer or worker thread.
+Sync currently uses the GitHub `gh` CLI. Storage fields are forge-agnostic so additional providers can be added later.
