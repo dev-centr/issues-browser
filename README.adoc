@@ -3,16 +3,47 @@ ifndef::env-github[:icons: font]
 :toclevels: 2
 :sectanchors:
 
+ifdef::env-github[]
+++++
+<a id="readme-top"></a>
+<div align="center">
+<a href="https://github.com/dev-centr/issues-browser/graphs/contributors"><img src="https://img.shields.io/github/contributors/dev-centr/issues-browser.svg?style=for-the-badge" alt="Contributors"></a>
+<a href="https://github.com/dev-centr/issues-browser/network/members"><img src="https://img.shields.io/github/forks/dev-centr/issues-browser.svg?style=for-the-badge" alt="Forks"></a>
+<a href="https://github.com/dev-centr/issues-browser/stargazers"><img src="https://img.shields.io/github/stars/dev-centr/issues-browser.svg?style=for-the-badge" alt="Stargazers"></a>
+<a href="https://github.com/dev-centr/issues-browser/issues"><img src="https://img.shields.io/github/issues/dev-centr/issues-browser.svg?style=for-the-badge" alt="Issues"></a>
+<br />
+<h3 align="center">Issues Browser</h3>
+<p align="center">
+Local forge metadata index (default) and opt-in per-repo backup for issues, pull requests, and discussions. Browse offline via GUI/CLI; monitor with <code>issuesd</code> + tray.<br />
+<a href="https://docs.devcentr.org/issues-browser/"><strong>Explore the docs »</strong></a><br /><br />
+<a href="https://github.com/dev-centr/issues-browser/issues">Report Bug</a>
+&middot;
+<a href="https://github.com/dev-centr/issues-browser/issues">Request Feature</a>
+</p>
+</div>
+++++
+endif::[]
+
+ifndef::env-github[]
+image:https://img.shields.io/github/contributors/dev-centr/issues-browser.svg?style=for-the-badge[Contributors,link=https://github.com/dev-centr/issues-browser/graphs/contributors]
+image:https://img.shields.io/github/forks/dev-centr/issues-browser.svg?style=for-the-badge[Forks,link=https://github.com/dev-centr/issues-browser/network/members]
+image:https://img.shields.io/github/stars/dev-centr/issues-browser.svg?style=for-the-badge[Stars,link=https://github.com/dev-centr/issues-browser/stargazers]
+image:https://img.shields.io/github/issues/dev-centr/issues-browser.svg?style=for-the-badge[Issues,link=https://github.com/dev-centr/issues-browser/issues]
+
 = Issues Browser
 
-Local **forge metadata index** (default) and **opt-in per-repo backup** for issues, pull requests, and discussions. Browse offline via GUI/CLI; monitor continuously with `issuesd` + tray.
+Local forge metadata index (default) and opt-in per-repo backup for issues, pull requests, and discussions. Browse offline via GUI/CLI; monitor with `issuesd` + tray.
+
+link:https://docs.devcentr.org/issues-browser/[Explore the docs] ·
+link:https://github.com/dev-centr/issues-browser/issues[Report Bug] ·
+link:https://github.com/dev-centr/issues-browser/issues[Request Feature]
+endif::[]
+
+== About The Project
 
 Works with https://github.com/dev-centr/repo-drive[RepoDrive] (`POST /open-repo`, index/backup fallbacks).
 
-link:https://docs.devcentr.org/issues-browser/[Docs] ·
-link:https://github.com/dev-centr/issues-browser/issues[Issues]
-
-== Components
+=== Components
 
 * **Library** — index + backup sync, SDL forge profiles, SQLite schema, monitor store
 * **CLI** (`issues-browser`) — ProHelp + sync/list/monitor (`--backup` / `--index-only`)
@@ -20,11 +51,54 @@ link:https://github.com/dev-centr/issues-browser/issues[Issues]
 * **Daemon** (`issuesd`) — polling + localhost IPC `:17365` (`/open-repo`, `/monitor/set-backup`)
 * **Tray** (`issues-browser-tray`) — Win32 tray client for the daemon
 
-== Quick start
+Index: `$CODE_ROOT/github.com/AMDphreak/.issues/index/index.sqlite` +
+archives for backup-enabled repos under `archives/<host>/<owner>/<repo>/database.sqlite`.
+
+Depth lives in the docs hub (not a secondary Pages site).
+
+ifdef::env-github[]
+++++
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+++++
+endif::[]
+
+== Built With
+
+* Language
+** link:https://dlang.org/[image:https://img.shields.io/badge/D-B03931?style=for-the-badge&logo=d&logoColor=white[D]]
+* UI
+** DlangUI (GUI); Win32 tray
+* Docs
+** link:https://antora.org[image:https://img.shields.io/badge/Antora-4A4A55?style=for-the-badge&logo=asciidoctor&logoColor=white[Antora]]
+
+ifdef::env-github[]
+++++
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+++++
+endif::[]
+
+== Getting Started
+
+=== Prerequisites
+
+* link:https://dub.pm/[DUB] and a D compiler (LDC or DMD)
+* **gh** CLI authenticated for GitHub API / GraphQL access (for sync)
+* **SQLite**: bundled d2sqlite3 `all-included` config (default) or provide `sqlite3.lib` on Windows
+
+=== Build
 
 [source,bash]
 ----
 dub build --config=cli
+dub build --config=application   # GUI (requires dlangui)
+dub build --config=daemon
+dub build --config=library
+----
+
+=== Quick start
+
+[source,bash]
+----
 issues-browser --sync ./myrepo
 issues-browser --sync ./myrepo --backup --yes
 issues-browser --set-backup owner/name
@@ -32,9 +106,44 @@ issues-browser --monitor-add owner/name
 dub build --config=daemon && issuesd
 ----
 
-Index: `$CODE_ROOT/github.com/AMDphreak/.issues/index/index.sqlite` +
-archives for backup-enabled repos under `archives/<host>/<owner>/<repo>/database.sqlite`.
+Full docs: https://docs.devcentr.org/issues-browser/
+
+ifdef::env-github[]
+++++
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+++++
+endif::[]
+
+== Changelog
+
+link:CHANGELOG.adoc[Changelog]
+
+ifdef::env-github[]
+++++
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+++++
+endif::[]
 
 == License
 
 MIT (application). ProHelp dependency is PCDL 1.0 — see https://github.com/openshellorg/prohelp
+
+ifdef::env-github[]
+++++
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+++++
+endif::[]
+
+== Contact
+
+Dev-Centr — link:https://github.com/dev-centr[github.com/dev-centr]
+
+* Project: https://github.com/dev-centr/issues-browser
+* Docs: https://docs.devcentr.org/issues-browser/
+* Site: https://devcentr.org
+
+ifdef::env-github[]
+++++
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+++++
+endif::[]
