@@ -3,6 +3,10 @@
 
 Timeline of Issues Browser functional changes. Detail pages live under `changelog-details/`.
 
+== 2026-09-02 — Provider mirror vision in docs
+
+* Index and backup pages frame Issues Browser as an early API-compatible mirror wedge; cross-links to Provider search and mirror backups + HCI Host-held history.
+
 == 2026-08-08 — Index cache + opt-in full backup
 
 * Lightweight central index cache with opt-in full per-repo backup archives.

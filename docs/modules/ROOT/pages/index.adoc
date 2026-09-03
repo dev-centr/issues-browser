@@ -2,7 +2,9 @@
 
 Issues Browser is a local **forge metadata backup** and offline browser for issues, pull requests, and discussions. It syncs correspondence into SQLite under a central `.issues/archives` tree so you can search offline and keep history if a remote disappears.
 
-It is not a ticket tracker for filing new work. Personal draft/submit workflows live under `AMDphreak/.issues/submissions/`.
+It is an early **mirror-backup wedge**: consumer-owned copies of forge correspondence that agents and humans can query without relying only on the host UI. The longer arc (provider-native vector/hybrid search + API-compatible backup providers) is documented as link:https://docs.devcentr.org/general-knowledge/explanation/internet-architecture/provider-search-and-mirror-backups.html[Provider search and mirror backups].
+
+It is not a ticket tracker for filing new work. Personal draft/submit workflows live under a username-level `.issues/submissions/` tree (prefer `gh --attach` for live GitHub media; keep `images/` as backup).
 
 == Features
 
@@ -26,3 +28,9 @@ It is not a ticket tracker for filing new work. Personal draft/submit workflows 
 . Browse with the GUI or CLI search
 
 See xref:backup.adoc[Forge metadata backup] and xref:usage.adoc[Usage].
+
+== Related vision
+
+* link:https://docs.devcentr.org/general-knowledge/explanation/internet-architecture/provider-search-and-mirror-backups.html[Provider search and mirror backups]
+* link:https://hci-nerdz.github.io/docs/hci-nerdz/host-held-history.html[HCI — Host-held history]
+* link:https://devcentr.org/ideas/provider-mirror-backups[Idea catalog — provider-mirror-backups]
