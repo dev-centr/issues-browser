@@ -1,6 +1,5 @@
-name: issues-browser
-title: Issues Browser
-version: master
-start_page: ROOT:index.adoc
+name: tools
+title: Tools
+version: ~
 nav:
-  - modules/ROOT/nav.adoc
+- modules/issues-browser/nav.adoc

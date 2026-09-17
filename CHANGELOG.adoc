@@ -20,6 +20,6 @@ Timeline of Issues Browser functional changes. Detail pages live under `changelo
 
 == 2026-08 — Rename to Issues Browser + docs hub
 
-* Renamed from issue-tracker to issues-browser; Antora component wired to `https://docs.devcentr.org/issues-browser/`.
+* Renamed from issue-tracker to issues-browser; Antora component wired to `https://docs.devcentr.org/tools/issues-browser/`.
 * Stopped secondary GitHub Pages Antora publish (validation-only docs CI).
 * See link:changelog-details/2026-08%20-%20rename-and-docs-hub.adoc[Detailed changelog].

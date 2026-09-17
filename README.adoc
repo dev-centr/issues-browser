@@ -15,7 +15,7 @@ ifdef::env-github[]
 <h3 align="center">Issues Browser</h3>
 <p align="center">
 Local forge metadata index (default) and opt-in per-repo backup for issues, pull requests, and discussions. Browse offline via GUI/CLI; monitor with <code>issuesd</code> + tray.<br />
-<a href="https://docs.devcentr.org/issues-browser/"><strong>Explore the docs »</strong></a><br /><br />
+<a href="https://docs.devcentr.org/tools/issues-browser/"><strong>Explore the docs »</strong></a><br /><br />
 <a href="https://github.com/dev-centr/issues-browser/issues">Report Bug</a>
 &middot;
 <a href="https://github.com/dev-centr/issues-browser/issues">Request Feature</a>
@@ -34,7 +34,7 @@ image:https://img.shields.io/github/issues/dev-centr/issues-browser.svg?style=fo
 
 Local forge metadata index (default) and opt-in per-repo backup for issues, pull requests, and discussions. Browse offline via GUI/CLI; monitor with `issuesd` + tray.
 
-link:https://docs.devcentr.org/issues-browser/[Explore the docs] ·
+link:https://docs.devcentr.org/tools/issues-browser/[Explore the docs] ·
 link:https://github.com/dev-centr/issues-browser/issues[Report Bug] ·
 link:https://github.com/dev-centr/issues-browser/issues[Request Feature]
 endif::[]
@@ -106,7 +106,7 @@ issues-browser --monitor-add owner/name
 dub build --config=daemon && issuesd
 ----
 
-Full docs: https://docs.devcentr.org/issues-browser/
+Full docs: https://docs.devcentr.org/tools/issues-browser/
 
 ifdef::env-github[]
 ++++
@@ -139,7 +139,7 @@ endif::[]
 Dev-Centr — link:https://github.com/dev-centr[github.com/dev-centr]
 
 * Project: https://github.com/dev-centr/issues-browser
-* Docs: https://docs.devcentr.org/issues-browser/
+* Docs: https://docs.devcentr.org/tools/issues-browser/
 * Site: https://devcentr.org
 
 ifdef::env-github[]
