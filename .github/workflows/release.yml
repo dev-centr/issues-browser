@@ -25,9 +25,9 @@ jobs:
             artifact: issues-browser
             asset: issues-browser-macos-amd64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install D
-        uses: dlang-community/setup-dlang@v1
+        uses: dlang-community/setup-dlang@v2
         with:
           compiler: ldc-latest
       - name: Build CLI
@@ -41,7 +41,7 @@ jobs:
             mv issues-browser ${{ matrix.asset }}
           fi
       - name: Upload to release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           files: ${{ matrix.asset }}
           draft: false
