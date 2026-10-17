@@ -1,4 +1,5 @@
-* xref:index.adoc[Introduction]
+.Issues Browser
+* xref:index.adoc[Overview]
 * xref:backup.adoc[Forge metadata backup]
 * xref:installation.adoc[Installation]
 * xref:usage.adoc[Usage]
