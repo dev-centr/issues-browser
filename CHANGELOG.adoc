@@ -3,17 +3,29 @@
 
 Timeline of Issues Browser functional changes. Detail pages live under `changelog-details/`.
 
-== 2026-09-02 — Provider mirror vision in docs
+== 2026-11-07
+
+=== Refresh documentation destinations
+
+* Update links to canonical folder URLs and the current news/blog article slugs. Replace retired references with available authoritative resources; private repositories remain explicitly access-controlled examples.
+
+== 2026-09-02
+
+=== Provider mirror vision in docs
 
 * Index and backup pages frame Issues Browser as an early API-compatible mirror wedge; cross-links to Provider search and mirror backups + HCI Host-held history.
 
-== 2026-08-08 — Index cache + opt-in full backup
+== 2026-08-08
+
+=== Index cache + opt-in full backup
 
 * Lightweight central index cache with opt-in full per-repo backup archives.
 * Monitor/daemon path for continuous sync (`issuesd` + tray).
 * See link:changelog-details/2026-08-08%20-%20index-cache-and-backup.adoc[Detailed changelog].
 
-== 2026-08-08 — Qt tray via dqt fork; repo-get forge profiles
+== 2026-08-08
+
+=== Qt tray via dqt fork; repo-get forge profiles
 
 * Tray uses dqt git fork for `QSystemTrayIcon`; forge profiles via repo-get DUB package.
 * See link:changelog-details/2026-08-08%20-%20qt-tray-and-forge-profiles.adoc[Detailed changelog].

@@ -43,6 +43,6 @@ GitHub is fully implemented via `gh`; GitLab profile is stubbed for `glab`.
 
 Full backup today is SQLite-shaped and CLI/GUI searchable.
 The architectural target is **API-compatible mirrors** of forge collections (same entities, queryable offline or via a backup provider) plus **provider-native search** so agents need not invent private RAG corpora from scratch.
-See link:https://docs.devcentr.org/general-knowledge/explanation/internet-architecture/provider-search-and-mirror-backups.html[Provider search and mirror backups].
+See link:https://docs.devcentr.org/general-knowledge/explanation/internet-architecture/provider-search-and-mirror-backups/[Provider search and mirror backups].
 
 Filing media: GitHub CLI `--attach` (gh ≥ 2.99) is the preferred live path; personal `.issues/images/` remains the consumer backup of what you submitted.
